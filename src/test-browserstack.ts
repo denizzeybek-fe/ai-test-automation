@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { BrowserStackService } from './services/browserstack.service.js';
 import chalk from 'chalk';
 
-async function testBrowserStackService() {
+async function testBrowserStackService(): Promise<void> {
   console.log(chalk.blue('🧪 Testing BrowserStack API Service\n'));
 
   // Get credentials from .env
@@ -64,4 +64,4 @@ async function testBrowserStackService() {
   }
 }
 
-testBrowserStackService();
+void testBrowserStackService();

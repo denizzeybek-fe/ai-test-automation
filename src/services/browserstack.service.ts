@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { BrowserStackTestCase, BrowserStackTestRun, TestCase } from '../types/index.js';
+import { BrowserStackTestCase, BrowserStackTestRun } from '../types/index.js';
 
 export interface BrowserStackFolder {
   id: number;
@@ -42,7 +42,7 @@ export class BrowserStackService {
    */
   async listTestRuns(): Promise<BrowserStackTestRun[]> {
     try {
-      const response = await this.client.get(
+      const response = await this.client.get<{ data: BrowserStackTestRun[] }>(
         `/projects/${this.projectId}/test-runs`
       );
       return response.data.data || [];
@@ -56,7 +56,7 @@ export class BrowserStackService {
    */
   async getTestRun(testRunId: string): Promise<BrowserStackTestRun> {
     try {
-      const response = await this.client.get(
+      const response = await this.client.get<BrowserStackTestRun>(
         `/projects/${this.projectId}/test-runs/${testRunId}`
       );
       return response.data;
@@ -86,10 +86,10 @@ export class BrowserStackService {
    */
   async listFolders(): Promise<BrowserStackFolder[]> {
     try {
-      const response = await this.client.get(
+      const response = await this.client.get<{ folders: BrowserStackFolder[] }>(
         `/projects/${this.projectId}/folders`
       );
-      return response.data.data || [];
+      return response.data.folders || [];
     } catch (error) {
       throw this.handleError(error, 'Failed to list folders');
     }
@@ -103,7 +103,7 @@ export class BrowserStackService {
     name: string
   ): Promise<BrowserStackFolder | null> {
     try {
-      const response = await this.client.get(
+      const response = await this.client.get<{ data: BrowserStackFolder[] }>(
         `/projects/${this.projectId}/folders/${parentId}/sub-folders`
       );
       const subfolders: BrowserStackFolder[] = response.data.data || [];
@@ -124,7 +124,7 @@ export class BrowserStackService {
     parentId: number
   ): Promise<BrowserStackFolder> {
     try {
-      const response = await this.client.post(
+      const response = await this.client.post<BrowserStackFolder>(
         `/projects/${this.projectId}/folders`,
         {
           name,
@@ -145,7 +145,7 @@ export class BrowserStackService {
     testCase: CreateTestCasePayload
   ): Promise<BrowserStackTestCase> {
     try {
-      const response = await this.client.post(
+      const response = await this.client.post<{ identifier: string; name: string }>(
         `/projects/${this.projectId}/folders/${folderId}/test-cases`,
         testCase
       );

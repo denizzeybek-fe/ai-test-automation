@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { RuleResolver } from './resolvers/rule-resolver.js';
 import { FolderMapper } from './resolvers/folder-mapper.js';
 
-function testResolvers() {
+function testResolvers(): void {
   console.log(chalk.blue('🧪 Testing Rule Resolver & Folder Mapper\n'));
 
   // Initialize services
