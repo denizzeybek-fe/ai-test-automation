@@ -153,4 +153,28 @@ export class JiraService {
 
     return new Error(`${message}: ${String(error)}`);
   }
+
+  /**
+   * Get all tasks from a sprint
+   * @param sprintId - Jira sprint ID
+   * @returns Array of simplified task info
+   */
+  async getSprintTasks(
+    sprintId: number
+  ): Promise<Array<{ id: string; title: string }>> {
+    try {
+      const response = await this.client.get<{
+        issues: Array<{ key: string; fields: { summary: string } }>;
+      }>(`/rest/agile/1.0/sprint/${sprintId}/issue`);
+
+      return response.data.issues.map((issue) => ({
+        id: issue.key,
+        title: issue.fields.summary,
+      }));
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch sprint tasks: ${(error as Error).message}`
+      );
+    }
+  }
 }
