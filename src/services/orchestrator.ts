@@ -6,6 +6,8 @@ import { FolderMapper } from '../resolvers/folder-mapper.js';
 import { PromptGenerator } from './prompt-generator.js';
 import { TestCaseImporter } from './testcase-importer.js';
 import { BrowserStackService } from './browserstack.service.js';
+import { ErrorLogger } from '../utils/error-logger.js';
+import { withRetry } from '../utils/with-retry.js';
 
 export class Orchestrator {
   private jiraService: JiraService;
@@ -51,9 +53,11 @@ export class Orchestrator {
     console.log(chalk.blue.bold(`\n🚀 Processing Task: ${taskId}\n`));
 
     try {
-      // Step 1: Fetch task from Jira
+      // Step 1: Fetch task from Jira (with retry)
       console.log(chalk.yellow('Step 1/6: Fetching task from Jira...'));
-      const taskInfo = await this.jiraService.getTask(taskId);
+      const taskInfo = await withRetry(() => this.jiraService.getTask(taskId), {
+        maxRetries: 3,
+      });
       console.log(chalk.green(`✅ Task fetched: ${taskInfo.title}\n`));
 
       // Step 2: Resolve analytics type
@@ -103,7 +107,7 @@ export class Orchestrator {
       const testCases = this.testCaseImporter.importSingle(responseFilePath);
       console.log(chalk.green(`✅ Imported ${testCases.length} test cases\n`));
 
-      // Step 6: Create test cases in BrowserStack
+      // Step 6: Create test cases in BrowserStack (with retry)
       console.log(chalk.yellow('Step 6/6: Creating test cases in BrowserStack...'));
       const folderId = this.folderMapper.getFolderId(analyticsType);
 
@@ -111,13 +115,29 @@ export class Orchestrator {
         const testCase = testCases[i];
         console.log(chalk.gray(`  Creating: ${testCase.name}...`));
 
-        await this.browserStackService.createTestCase(folderId, {
-          name: testCase.name,
-          description: testCase.description,
-          preconditions: testCase.preconditions,
-          test_case_steps: testCase.test_case_steps,
-          tags: testCase.tags,
-        });
+        try {
+          await withRetry(
+            () =>
+              this.browserStackService.createTestCase(folderId, {
+                name: testCase.name,
+                description: testCase.description,
+                preconditions: testCase.preconditions,
+                test_case_steps: testCase.test_case_steps,
+                tags: testCase.tags,
+              }),
+            { maxRetries: 3 }
+          );
+        } catch (error) {
+          // Log error but continue with other test cases
+          ErrorLogger.log(
+            ErrorLogger.createLog(
+              error as Error,
+              taskId,
+              `Create test case: ${testCase.name}`
+            )
+          );
+          console.log(chalk.red(`  ⚠️  Failed to create: ${testCase.name}`));
+        }
       }
 
       console.log(chalk.green(`✅ Created ${testCases.length} test cases in BrowserStack\n`));
@@ -125,8 +145,14 @@ export class Orchestrator {
 
       return true;
     } catch (error) {
+      // Log error to file
+      ErrorLogger.log(
+        ErrorLogger.createLog(error as Error, taskId, 'Process single task')
+      );
+
       console.log(chalk.red.bold(`\n❌ Error processing task ${taskId}:\n`));
       console.log(chalk.red((error as Error).message));
+      console.log(chalk.gray(`\nError logged to: errors/\n`));
       return false;
     }
   }
