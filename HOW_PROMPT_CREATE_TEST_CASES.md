@@ -68,7 +68,7 @@ Common Issues to Test:
 ### How Claude Reasoned
 
 1. **"Save As Default Refactor"** → Feature involves saving user preferences
-2. **"bu tarz bugların yaşanmaması"** → Need tests to prevent previous bugs
+2. **"to prevent such bugs"** (from description) → Need tests to prevent previous bugs
 3. **Product Rules features** → What needs to be saved:
    - Product card configurations
    - Date ranges and comparison mode

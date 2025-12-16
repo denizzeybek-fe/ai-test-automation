@@ -1,12 +1,12 @@
 # Batch Processing Workflow
 
-## Single Task (Şu Anki Durum)
+## Single Task (Current Implementation)
 
 ```bash
 npm run dev run -- --tasks PA-34858
 ```
 
-**Akış:**
+**Flow:**
 1. ✅ Fetch task from Jira
 2. ✅ Resolve analytics type
 3. ✅ Create subfolder
@@ -19,15 +19,15 @@ npm run dev run -- --tasks PA-34858
 
 ---
 
-## Multiple Tasks (Gelecek - Phase 6)
+## Multiple Tasks (Future - Phase 6)
 
-### Senaryo 1: Sequential Processing (Şu Anki İmplementasyon)
+### Scenario 1: Sequential Processing (Current Implementation)
 
 ```bash
 npm run dev run -- --tasks PA-34858,PA-34859,PA-34860
 ```
 
-**Akış:**
+**Flow:**
 ```
 FOR EACH task:
   1. Generate prompt
@@ -37,25 +37,25 @@ FOR EACH task:
   5. Link to test run
 ```
 
-**Artılar:**
-- ✅ Basit implementasyon
-- ✅ Her task için anında feedback
+**Pros:**
+- ✅ Simple implementation
+- ✅ Immediate feedback for each task
 
-**Eksiler:**
-- ❌ Her task için ayrı ayrı beklemek gerekiyor
-- ❌ Yavaş (50 task = 50 defa bekle)
+**Cons:**
+- ❌ Need to wait for each task separately
+- ❌ Slow (50 tasks = 50 wait cycles)
 
 ---
 
-### Senaryo 2: Batch Processing (Önerilen - Phase 6)
+### Scenario 2: Batch Processing (Recommended - Phase 6)
 
 ```bash
 npm run dev run -- --tasks PA-34858,PA-34859,PA-34860
 ```
 
-**Akış:**
+**Flow:**
 
-#### Phase 1: Prompt Generation (Otomatik)
+#### Phase 1: Prompt Generation (Automated)
 ```
 FOR EACH task:
   1. Fetch from Jira
@@ -80,7 +80,7 @@ FOR EACH task:
 Press Enter when ALL responses are ready...
 ```
 
-#### Phase 2: Batch Import & Create (Otomatik)
+#### Phase 2: Batch Import & Create (Automated)
 ```
 User presses Enter
 
@@ -98,20 +98,20 @@ FOR EACH task:
 ✅ Batch complete!
 ```
 
-**Artılar:**
-- ✅ Tek seferde tüm promptlar üretiliyor
-- ✅ User istediği sırada Claude'a verebilir
-- ✅ Hızlı (50 task = 1 defa bekle)
-- ✅ Paralel çalışma imkanı (user 10 Claude tab açabilir)
+**Pros:**
+- ✅ All prompts generated at once
+- ✅ User can submit to Claude at their own pace
+- ✅ Fast (50 tasks = 1 wait cycle)
+- ✅ Enables parallel work (user can open 10 Claude tabs)
 
-**Eksiler:**
-- ⚠️ Tüm response'lar hazır olana kadar devam edilemiyor
+**Cons:**
+- ⚠️ Cannot proceed until all responses are ready
 
 ---
 
-## Önerilen Implementasyon
+## Recommended Implementation
 
-### Option A: Tam Batch (Best for 10+ tasks)
+### Option A: Full Batch (Best for 10+ tasks)
 
 ```typescript
 async processBatchTasks(taskIds: string[]): Promise<number> {
@@ -157,7 +157,7 @@ async processBatchTasks(taskIds: string[], batchSize = 5): Promise<number> {
 }
 ```
 
-**Batch Size:**
+**Batch Size Strategy:**
 - 1-2 tasks → Sequential (current)
 - 3-10 tasks → Hybrid (batches of 5)
 - 10+ tasks → Full batch (all at once)
@@ -166,15 +166,15 @@ async processBatchTasks(taskIds: string[], batchSize = 5): Promise<number> {
 
 ## Recommendation
 
-**Şu an için Sequential yeterli** (zaten çalışıyor)
+**Sequential is sufficient for now** (already working)
 
-**Phase 6'da eklenecek:**
+**To be added in Phase 6:**
 - Hybrid batch processing
 - Configurable batch size (.env: BATCH_SIZE=5)
 - Progress tracking
-- Better error handling (hangi task fail oldu?)
+- Better error handling (which task failed?)
 
-**Kullanım:**
+**Usage:**
 
 ```bash
 # Sequential (current - works)
