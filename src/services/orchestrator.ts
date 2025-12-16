@@ -81,7 +81,7 @@ export class Orchestrator {
       const ruleContent = this.promptGenerator.readRuleFile(ruleFilePath);
       console.log(chalk.green(`✅ Rules loaded from: ${ruleFilePath}\n`));
 
-      // Step 5: Generate prompt
+      // Step 5: Generate prompt and create empty response file
       console.log(chalk.yellow('Step 5/8: Generating AI prompt...'));
       const prompt = this.promptGenerator.generateSinglePrompt(
         taskInfo,
@@ -90,7 +90,15 @@ export class Orchestrator {
       );
       const promptFileName = `prompt-${taskId}-${Date.now()}.md`;
       this.promptGenerator.savePromptToFile(prompt, promptFileName);
-      console.log(chalk.green(`✅ Prompt saved: output/prompts/${promptFileName}\n`));
+
+      // Create empty response file for user to fill
+      const responseFileName = `response-${taskId}.json`;
+      const responseFilePath = `output/responses/${responseFileName}`;
+      const fs = await import('fs/promises');
+      await fs.writeFile(responseFilePath, '[\n  \n]', 'utf-8');
+
+      console.log(chalk.green(`✅ Prompt saved: output/prompts/${promptFileName}`));
+      console.log(chalk.green(`✅ Empty response file created: ${responseFilePath}\n`));
 
       // Manual step: User interaction required
       console.log(chalk.cyan.bold('⏸️  MANUAL STEP REQUIRED\n'));
@@ -100,18 +108,18 @@ export class Orchestrator {
       console.log(chalk.gray('2. Copy the entire content'));
       console.log(chalk.gray('3. Paste it into Claude Desktop'));
       console.log(chalk.gray('4. Copy the JSON response from Claude'));
-      console.log(chalk.gray('5. Save it as:'));
-      console.log(chalk.gray(`   output/responses/response-${taskId}.json\n`));
-      console.log(chalk.yellow('Press Enter when you have saved the response file...'));
+      console.log(chalk.gray('5. Paste it into the pre-created file:'));
+      console.log(chalk.yellow(`   ${responseFilePath}\n`));
+      console.log(chalk.gray('   (File is already open and waiting for your response!)\n'));
+      console.log(chalk.yellow('Press Enter when you have pasted the response...'));
 
       // Wait for user input
       await this.waitForUserInput();
 
       // Step 6: Import test cases
       console.log(chalk.yellow('\nStep 6/8: Importing test cases from AI response...'));
-      const responseFilePath = `output/responses/response-${taskId}.json`;
 
-      // Wait for file to exist (with timeout)
+      // Wait for file to have content (with timeout)
       await this.testCaseImporter.waitForFile(responseFilePath, 60000); // 1 minute timeout
 
       const testCases = this.testCaseImporter.importSingle(responseFilePath);
