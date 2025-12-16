@@ -2,6 +2,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { RuleResolver } from './resolvers/rule-resolver.js';
 import { FolderMapper } from './resolvers/folder-mapper.js';
+import { AnalyticsType } from './types/index.js';
 
 function testResolvers(): void {
   console.log(chalk.blue('🧪 Testing Rule Resolver & Folder Mapper\n'));
@@ -19,43 +20,43 @@ function testResolvers(): void {
   const testCases = [
     {
       title: 'Overall Analytics Dashboard Bug',
-      expected: 'overall',
+      expected: AnalyticsType.Overall,
     },
     {
       title: 'Fix HomePage Banner Issue',
-      expected: 'homepage',
+      expected: AnalyticsType.Homepage,
     },
     {
       title: 'Onsite-Analytics Performance',
-      expected: 'onsite',
+      expected: AnalyticsType.Onsite,
     },
     {
       title: 'Usage Analytics Export',
-      expected: 'usage',
+      expected: AnalyticsType.Usage,
     },
     {
       title: 'Random Task Without Keywords',
-      expected: 'overall', // default
+      expected: AnalyticsType.Overall, // default
     },
     {
       title: 'OVERALL-ANALYTICS-METRICS',
-      expected: 'overall', // case-insensitive
+      expected: AnalyticsType.Overall, // case-insensitive
     },
     {
       title: 'homepage redesign',
-      expected: 'homepage', // lowercase
+      expected: AnalyticsType.Homepage, // lowercase
     },
     {
       title: 'Homepage Analytics - Overall Performance',
-      expected: 'homepage', // homepage appears first
+      expected: AnalyticsType.Homepage, // homepage appears first
     },
     {
       title: 'Overall Analytics - Homepage Metrics',
-      expected: 'overall', // overall appears first
+      expected: AnalyticsType.Overall, // overall appears first
     },
     {
       title: 'Fix Usage in Onsite Analytics',
-      expected: 'usage', // usage appears first (position 4)
+      expected: AnalyticsType.Usage, // usage appears first (position 4)
     },
   ];
 

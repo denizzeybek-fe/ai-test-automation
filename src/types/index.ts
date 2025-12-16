@@ -9,7 +9,13 @@ export interface TaskInfo {
   confluenceUrl?: string;
 }
 
-export type AnalyticsType = 'overall' | 'homepage' | 'onsite' | 'usage' | 'other';
+export enum AnalyticsType {
+  Overall = 'overall',
+  Homepage = 'homepage',
+  Onsite = 'onsite',
+  Usage = 'usage',
+  Other = 'other',
+}
 
 export interface TestCase {
   name: string;

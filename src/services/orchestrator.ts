@@ -251,7 +251,7 @@ export class Orchestrator {
     const types = this.ruleResolver.getTypes();
 
     for (const type of types) {
-      if (type === 'other') continue; // Skip 'other' type
+      if (type === AnalyticsType.Other) continue; // Skip 'other' type
 
       const patterns = this.ruleResolver.getPatterns(type);
       if (!patterns || patterns.length === 0) continue;
@@ -269,7 +269,7 @@ export class Orchestrator {
   /**
    * Prompt user to select analytics type
    */
-  private async promptAnalyticsType(): Promise<'overall' | 'homepage' | 'onsite' | 'usage' | 'other' | 'skip'> {
+  private async promptAnalyticsType(): Promise<AnalyticsType | 'skip'> {
     console.log(chalk.cyan('Which analytics type should this be?\n'));
     console.log(chalk.white('  1. Overall Analytics'));
     console.log(chalk.white('  2. Homepage Analytics'));
@@ -289,26 +289,26 @@ export class Orchestrator {
 
         switch (choice) {
           case '1':
-            resolve('overall');
+            resolve(AnalyticsType.Overall);
             break;
           case '2':
-            resolve('homepage');
+            resolve(AnalyticsType.Homepage);
             break;
           case '3':
-            resolve('onsite');
+            resolve(AnalyticsType.Onsite);
             break;
           case '4':
-            resolve('usage');
+            resolve(AnalyticsType.Usage);
             break;
           case '5':
-            resolve('other');
+            resolve(AnalyticsType.Other);
             break;
           case '6':
             resolve('skip');
             break;
           default:
             console.log(chalk.red('\n❌ Invalid choice. Defaulting to "other"\n'));
-            resolve('other');
+            resolve(AnalyticsType.Other);
         }
       };
 
@@ -395,7 +395,7 @@ export class Orchestrator {
           ErrorLogger.createLog(error as Error, taskId, 'Generate prompt')
         );
         console.log(chalk.red(`  ❌ Failed to generate prompt\n`));
-        taskDataList.push({ taskId, taskInfo: null, analyticsType: 'overall', skip: true });
+        taskDataList.push({ taskId, taskInfo: null, analyticsType: AnalyticsType.Overall, skip: true });
       }
     }
 
