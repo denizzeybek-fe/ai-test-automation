@@ -95,4 +95,13 @@ export class RuleResolver {
   getDefaultType(): AnalyticsType {
     return this.config.defaultType;
   }
+
+  /**
+   * Get compiled patterns for a specific type
+   * @param type - Analytics type
+   * @returns Array of regex patterns
+   */
+  getPatterns(type: AnalyticsType): RegExp[] {
+    return this.patterns.get(type) || [];
+  }
 }

@@ -20,7 +20,7 @@ program
 program
   .command('run')
   .description('Generate and create test cases')
-  .option('-t, --tasks <taskIds...>', 'Jira task IDs (e.g., PA-12345 PA-67890)')
+  .option('-t, --tasks <taskIds...>', 'Jira task IDs (space or comma-separated: PA-12345 PA-67890 or PA-12345,PA-67890)')
   .option('-s, --sprint-id <sprintId>', 'Jira sprint ID to process all tasks')
   .option(
     '-b, --batch-size <size>',
@@ -39,6 +39,7 @@ program
         console.log(chalk.gray('Examples:'));
         console.log(chalk.gray('  npm run dev run -- --tasks PA-12345'));
         console.log(chalk.gray('  npm run dev run -- --tasks PA-12345 PA-67890'));
+        console.log(chalk.gray('  npm run dev run -- --tasks PA-12345,PA-67890,PA-89012'));
         console.log(chalk.gray('  npm run dev run -- --sprint-id 123\n'));
         process.exit(1);
       }
@@ -55,7 +56,12 @@ program
 
       // Get task IDs
       if (options.tasks) {
-        taskIds = options.tasks;
+        // Support both comma-separated and space-separated
+        // "PA-123,PA-456" or "PA-123 PA-456" both work
+        taskIds = options.tasks
+          .flatMap((task) => task.split(','))
+          .map((task) => task.trim())
+          .filter((task) => task.length > 0);
         console.log(chalk.white(`📋 Processing ${taskIds.length} task(s)\n`));
       } else if (options.sprintId) {
         console.log(chalk.yellow(`🔍 Fetching tasks from sprint ${options.sprintId}...\n`));

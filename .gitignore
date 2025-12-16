@@ -5,3 +5,9 @@ errors/*.md
 !errors/.gitkeep
 *.log
 .DS_Store
+
+# Generated prompts and responses (not needed in git)
+output/prompts/*.md
+output/responses/*.json
+!output/prompts/.gitkeep
+!output/responses/.gitkeep

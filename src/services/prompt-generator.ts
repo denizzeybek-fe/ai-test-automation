@@ -87,20 +87,25 @@ Return **ONLY** valid JSON (no markdown, no code blocks, no explanation):
 **Analytics Type:** ${task.analyticsType}
 
 **Description:**
-${task.taskInfo.description.substring(0, 500)}${task.taskInfo.description.length > 500 ? '...' : ''}
+${task.taskInfo.description}
 
+${task.taskInfo.rootCause ? `**Root Cause:**\n${task.taskInfo.rootCause}\n` : ''}
+${task.taskInfo.testCaseDescription ? `**Test Case Description:**\n${task.taskInfo.testCaseDescription}\n` : ''}
 ${task.taskInfo.figmaUrl ? `**Figma:** ${task.taskInfo.figmaUrl}\n` : ''}
 ${task.taskInfo.confluenceUrl ? `**Docs:** ${task.taskInfo.confluenceUrl}\n` : ''}
 
 **Product Rules:**
-${task.ruleContent.substring(0, 300)}...
+${task.ruleContent}
 `;
       })
       .join('\n---\n\n');
 
+    // Generate example keys for JSON format
+    const exampleKeys = tasks.map(t => `"${t.taskInfo.id}"`).join(', ');
+
     return `# Batch Test Case Generation Request
 
-Generate test cases for BrowserStack Test Management for ${tasks.length} tasks.
+Generate test cases for BrowserStack Test Management for **${tasks.length} tasks** below.
 
 ## Tasks
 
@@ -108,31 +113,36 @@ ${taskSections}
 
 ## Output Format
 
-Return **ONLY** valid JSON (no markdown, no code blocks, no explanation):
+Return **ONLY** valid JSON (no markdown, no code blocks, no explanation).
+
+The JSON must be an object where each key is a task ID, and the value is an array of test cases:
 
 \`\`\`json
 {
   "${tasks[0].taskInfo.id}": [
     {
-      "name": "Test case name",
+      "name": "Test case name (clear and descriptive)",
       "description": "What this test validates",
+      "preconditions": "Optional: Any setup required",
       "test_case_steps": [
-        { "step": "Action", "result": "Expected outcome" }
+        {
+          "step": "Action to perform",
+          "result": "Expected outcome"
+        }
       ],
-      "tags": ["tag1", "tag2"]
+      "tags": ["${tasks[0].analyticsType}", "tag2"]
     }
-  ],
-  "${tasks.length > 1 ? tasks[1].taskInfo.id : 'TASK-ID'}": [
-    // ... test cases for this task
-  ]
+  ]${tasks.length > 1 ? `,\n  "${tasks[1].taskInfo.id}": [\n    // ... 2-5 test cases\n  ]` : ''}
 }
 \`\`\`
 
 **Important:**
-- Generate 2-3 test cases per task
-- Use task ID as the key in the JSON object
-- Each test case should be comprehensive and actionable
-- Include relevant tags
+- Generate 2-5 comprehensive test cases per task
+- Keys must be exact task IDs: ${exampleKeys}
+- Each test case should cover different scenarios
+- Steps should be clear and actionable
+- Expected results should be specific and verifiable
+- Include relevant tags for categorization
 `;
   }
 

@@ -3,14 +3,16 @@
     "overall": ["overall[\\s-]?analytics?", "overallanalytics", "overall"],
     "homepage": ["home[\\s-]?page", "homepage"],
     "onsite": ["on[\\s-]?site[\\s-]?analytics?", "onsiteanalytics", "onsite"],
-    "usage": ["usage[\\s-]?analytics?", "usageanalytics", "usage"]
+    "usage": ["usage[\\s-]?analytics?", "usageanalytics", "usage"],
+    "other": []
   },
-  "priorityOrder": ["overall", "homepage", "onsite", "usage"],
+  "priorityOrder": ["overall", "homepage", "onsite", "usage", "other"],
   "defaultType": "overall",
   "ruleFiles": {
     "overall": "rules/product_rules/Valorem/overall-analytics/overall-analytics.mdc",
     "homepage": "rules/product_rules/Valorem/homepage/homepage.mdc",
     "onsite": "rules/product_rules/Valorem/onsite-analytics/onsite-analytics.mdc",
-    "usage": "rules/product_rules/Valorem/usage-analytics/usage-analytics.mdc"
+    "usage": "rules/product_rules/Valorem/usage-analytics/usage-analytics.mdc",
+    "other": "rules/product_rules/Valorem/overall-analytics/overall-analytics.mdc"
   }
 }

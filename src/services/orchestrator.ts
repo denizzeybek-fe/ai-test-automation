@@ -8,6 +8,7 @@ import { TestCaseImporter } from './testcase-importer.js';
 import { BrowserStackService } from './browserstack.service.js';
 import { ErrorLogger } from '../utils/error-logger.js';
 import { withRetry } from '../utils/with-retry.js';
+import { AnalyticsType, TaskInfo } from '../types/index.js';
 
 export class Orchestrator {
   private jiraService: JiraService;
@@ -62,7 +63,27 @@ export class Orchestrator {
 
       // Step 2: Resolve analytics type
       console.log(chalk.yellow('Step 2/8: Resolving analytics type...'));
-      const analyticsType = this.ruleResolver.resolve(taskInfo.title);
+      let analyticsType = this.ruleResolver.resolve(taskInfo.title);
+
+      // If no keyword found, ask user
+      if (analyticsType === this.ruleResolver.getDefaultType()) {
+        // Check if any keyword actually matched
+        const hasKeyword = this.hasKeywordMatch(taskInfo.title);
+
+        if (!hasKeyword) {
+          console.log(chalk.yellow(`⚠️  No keyword found in: "${taskInfo.title}"\n`));
+
+          const userChoice = await this.promptAnalyticsType();
+
+          if (userChoice === 'skip') {
+            console.log(chalk.gray(`⏭️  Skipping task ${taskId}\n`));
+            return false; // Skip this task
+          }
+
+          analyticsType = userChoice;
+        }
+      }
+
       console.log(chalk.green(`✅ Analytics type: ${analyticsType}\n`));
 
       // Step 3: Get parent folder and create task-specific subfolder
@@ -224,21 +245,299 @@ export class Orchestrator {
   }
 
   /**
+   * Check if task title has any keyword match
+   */
+  private hasKeywordMatch(title: string): boolean {
+    const types = this.ruleResolver.getTypes();
+
+    for (const type of types) {
+      if (type === 'other') continue; // Skip 'other' type
+
+      const patterns = this.ruleResolver.getPatterns(type);
+      if (!patterns || patterns.length === 0) continue;
+
+      for (const pattern of patterns) {
+        if (pattern.test(title)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Prompt user to select analytics type
+   */
+  private async promptAnalyticsType(): Promise<'overall' | 'homepage' | 'onsite' | 'usage' | 'other' | 'skip'> {
+    console.log(chalk.cyan('Which analytics type should this be?\n'));
+    console.log(chalk.white('  1. Overall Analytics'));
+    console.log(chalk.white('  2. Homepage Analytics'));
+    console.log(chalk.white('  3. Onsite Analytics'));
+    console.log(chalk.white('  4. Usage Analytics'));
+    console.log(chalk.white('  5. Other'));
+    console.log(chalk.gray('  6. Skip this task\n'));
+
+    return new Promise((resolve) => {
+      process.stdout.write(chalk.yellow('Your choice [1-6]: '));
+
+      const onData = (data: Buffer): void => {
+        const choice = data.toString().trim();
+
+        // Remove listener immediately
+        process.stdin.off('data', onData);
+
+        switch (choice) {
+          case '1':
+            resolve('overall');
+            break;
+          case '2':
+            resolve('homepage');
+            break;
+          case '3':
+            resolve('onsite');
+            break;
+          case '4':
+            resolve('usage');
+            break;
+          case '5':
+            resolve('other');
+            break;
+          case '6':
+            resolve('skip');
+            break;
+          default:
+            console.log(chalk.red('\n❌ Invalid choice. Defaulting to "other"\n'));
+            resolve('other');
+        }
+      };
+
+      process.stdin.once('data', onData);
+    });
+  }
+
+  /**
    * Process multiple tasks in batch
    * @param taskIds - Array of Jira task IDs
    * @returns Number of successfully processed tasks
    */
   async processBatchTasks(taskIds: string[]): Promise<number> {
-    console.log(chalk.blue.bold(`\n🚀 Processing ${taskIds.length} Tasks in Batch\n`));
+    // Single task: use sequential flow (unchanged)
+    if (taskIds.length === 1) {
+      console.log(chalk.blue.bold(`\n🚀 Processing ${taskIds.length} Task\n`));
+      const success = await this.processSingleTask(taskIds[0]);
+      return success ? 1 : 0;
+    }
+
+    // Multiple tasks: use batch flow
+    console.log(chalk.blue.bold(`\n🚀 Processing ${taskIds.length} Tasks in Batch Mode\n`));
+    console.log(chalk.gray('Batch mode: All prompts generated first, then process all at once\n'));
+
+    const taskDataList: Array<{
+      taskId: string;
+      taskInfo: TaskInfo | null;
+      analyticsType: AnalyticsType;
+      skip: boolean;
+      ruleContent?: string;
+    }> = [];
+
+    // Phase 1: Generate all prompts
+    console.log(chalk.blue.bold('📝 Phase 1: Generating Prompts for All Tasks\n'));
+
+    for (let i = 0; i < taskIds.length; i++) {
+      const taskId = taskIds[i];
+      console.log(chalk.cyan(`[${i + 1}/${taskIds.length}] Processing ${taskId}...\n`));
+
+      try {
+        // Step 1: Fetch task
+        const taskInfo = await withRetry(() => this.jiraService.getTask(taskId), {
+          maxRetries: 3,
+        });
+        console.log(chalk.green(`  ✅ Fetched: ${taskInfo.title}`));
+
+        // Step 2: Resolve analytics type
+        let analyticsType = this.ruleResolver.resolve(taskInfo.title);
+        let skip = false;
+
+        if (analyticsType === this.ruleResolver.getDefaultType()) {
+          const hasKeyword = this.hasKeywordMatch(taskInfo.title);
+
+          if (!hasKeyword) {
+            console.log(chalk.yellow(`  ⚠️  No keyword found\n`));
+            const userChoice = await this.promptAnalyticsType();
+
+            if (userChoice === 'skip') {
+              console.log(chalk.gray(`  ⏭️  Skipping\n`));
+              skip = true;
+            } else {
+              analyticsType = userChoice;
+            }
+          }
+        }
+
+        if (!skip) {
+          console.log(chalk.green(`  ✅ Type: ${analyticsType}`));
+
+          // Collect task data for batch prompt generation
+          const ruleFilePath = this.ruleResolver.getRuleFilePath(analyticsType);
+          const ruleContent = this.promptGenerator.readRuleFile(ruleFilePath);
+
+          taskDataList.push({
+            taskId,
+            taskInfo,
+            analyticsType,
+            skip: false,
+            ruleContent
+          });
+        }
+      } catch (error) {
+        ErrorLogger.log(
+          ErrorLogger.createLog(error as Error, taskId, 'Generate prompt')
+        );
+        console.log(chalk.red(`  ❌ Failed to generate prompt\n`));
+        taskDataList.push({ taskId, taskInfo: null, analyticsType: 'overall', skip: true });
+      }
+    }
+
+    // Generate single batch prompt for all valid tasks
+    const validTasks = taskDataList.filter((t) => !t.skip);
+
+    if (validTasks.length === 0) {
+      console.log(chalk.yellow('\n⚠️  All tasks were skipped or failed\n'));
+      return 0;
+    }
+
+    console.log(chalk.blue.bold('\n📝 Generating Single Batch Prompt\n'));
+
+    // Prepare batch prompt data
+    const batchPromptData = validTasks.map((task) => ({
+      taskInfo: task.taskInfo!,
+      analyticsType: task.analyticsType,
+      ruleContent: task.ruleContent!,
+    }));
+
+    const batchPrompt = this.promptGenerator.generateBatchPrompt(batchPromptData);
+    const timestamp = Date.now();
+    const batchPromptFileName = `prompt-batch-${timestamp}.md`;
+    this.promptGenerator.savePromptToFile(batchPrompt, batchPromptFileName);
+
+    // Create empty batch response file
+    const batchResponseFileName = `response-batch-${timestamp}.json`;
+    const batchResponseFilePath = `output/responses/${batchResponseFileName}`;
+    const fs = await import('fs/promises');
+
+    // Create empty object with task IDs as keys
+    const emptyResponse: Record<string, unknown[]> = {};
+    validTasks.forEach((task) => {
+      emptyResponse[task.taskId] = [];
+    });
+    await fs.writeFile(batchResponseFilePath, JSON.stringify(emptyResponse, null, 2), 'utf-8');
+
+    console.log(chalk.green(`✅ Batch prompt saved: output/prompts/${batchPromptFileName}`));
+    console.log(chalk.green(`✅ Empty response file created: ${batchResponseFilePath}\n`));
+
+    console.log(chalk.blue.bold('📋 Tasks in this batch:\n'));
+    validTasks.forEach((task, index) => {
+      console.log(chalk.gray(`  ${index + 1}. ${task.taskId} - ${task.taskInfo!.title}`));
+    });
+
+    console.log(chalk.cyan.bold('\n⏸️  MANUAL STEP REQUIRED\n'));
+    console.log(chalk.white('1. Open the batch prompt file:'));
+    console.log(chalk.yellow(`   output/prompts/${batchPromptFileName}\n`));
+    console.log(chalk.white('2. Copy the entire content'));
+    console.log(chalk.white('3. Paste it into Claude Desktop'));
+    console.log(chalk.white('4. Copy the JSON response from Claude'));
+    console.log(chalk.white('5. Paste it into the response file:'));
+    console.log(chalk.yellow(`   ${batchResponseFilePath}\n`));
+    console.log(chalk.gray('   (File already has the correct structure with task IDs as keys)\n'));
+    console.log(chalk.yellow('Press Enter when the batch response is ready...\n'));
+
+    await this.waitForUserInput();
+
+    // Phase 2: Process all tasks
+    console.log(chalk.blue.bold('\n📦 Phase 2: Creating Test Cases in BrowserStack\n'));
+
+    // Import batch response
+    await this.testCaseImporter.waitForFile(batchResponseFilePath, 5000);
+    const batchTestCases = this.testCaseImporter.importBatch(batchResponseFilePath);
+    console.log(chalk.green(`✅ Imported test cases for ${Object.keys(batchTestCases).length} tasks\n`));
 
     let successCount = 0;
 
-    for (const taskId of taskIds) {
-      const success = await this.processSingleTask(taskId);
-      if (success) {
-        successCount++;
+    for (let i = 0; i < taskDataList.length; i++) {
+      const taskData = taskDataList[i];
+
+      if (taskData.skip) {
+        console.log(chalk.gray(`[${i + 1}/${taskDataList.length}] Skipped ${taskData.taskId}\n`));
+        continue;
       }
-      console.log(chalk.gray('─'.repeat(50) + '\n'));
+
+      console.log(chalk.cyan(`[${i + 1}/${taskDataList.length}] Processing ${taskData.taskId}...\n`));
+
+      try {
+        // Get test cases for this task from batch
+        const testCases = batchTestCases[taskData.taskId];
+
+        if (!testCases || testCases.length === 0) {
+          throw new Error(`No test cases found for ${taskData.taskId} in batch response`);
+        }
+
+        console.log(chalk.green(`  ✅ Found ${testCases.length} test cases`));
+
+        // Create subfolder
+        if (!taskData.taskInfo) {
+          throw new Error('Task info is missing');
+        }
+
+        const parentFolderId = this.folderMapper.getFolderId(taskData.analyticsType);
+        const subfolderName = `${taskData.taskId} - ${taskData.taskInfo.title}`;
+        const subfolder = await this.browserStackService.findOrCreateSubfolder(
+          parentFolderId,
+          subfolderName
+        );
+        console.log(chalk.green(`  ✅ Subfolder: ${subfolder.id}`));
+
+        // Create test cases
+        const createdTestCaseIds: string[] = [];
+        for (const testCase of testCases) {
+          const createdTestCase = await withRetry(
+            () =>
+              this.browserStackService.createTestCase(subfolder.id, {
+                name: testCase.name,
+                description: testCase.description,
+                preconditions: testCase.preconditions,
+                test_case_steps: testCase.test_case_steps,
+                tags: testCase.tags,
+              }),
+            { maxRetries: 3 }
+          );
+          createdTestCaseIds.push(createdTestCase.identifier);
+        }
+        console.log(chalk.green(`  ✅ Created ${createdTestCaseIds.length} test cases`));
+
+        // Link to test run
+        const testRun = await withRetry(
+          () => this.browserStackService.findTestRunByTaskId(taskData.taskId),
+          { maxRetries: 3 }
+        );
+
+        if (testRun) {
+          await withRetry(
+            () => this.browserStackService.updateTestRunCases(testRun.identifier, createdTestCaseIds),
+            { maxRetries: 3 }
+          );
+          console.log(chalk.green(`  ✅ Linked to test run ${testRun.identifier}\n`));
+        } else {
+          console.log(chalk.yellow(`  ⚠️  Test run not found\n`));
+        }
+
+        successCount++;
+      } catch (error) {
+        ErrorLogger.log(
+          ErrorLogger.createLog(error as Error, taskData.taskId, 'Process task in batch')
+        );
+        console.log(chalk.red(`  ❌ Failed\n`));
+      }
     }
 
     console.log(chalk.blue.bold(`\n📊 Batch Processing Complete\n`));
