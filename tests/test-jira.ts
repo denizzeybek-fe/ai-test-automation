@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import chalk from 'chalk';
-import { JiraService } from './services/jira.service.js';
+import { JiraService } from '../src/services/jira.service.js';
 
 async function testJiraService(): Promise<void> {
   console.log(chalk.blue('🧪 Testing Jira API Service\n'));

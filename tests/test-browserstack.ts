@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { BrowserStackService } from './services/browserstack.service.js';
+import { BrowserStackService } from '../src/services/browserstack.service.js';
 import chalk from 'chalk';
 
 async function testBrowserStackService(): Promise<void> {

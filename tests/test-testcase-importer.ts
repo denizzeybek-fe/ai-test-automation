@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { TestCaseImporter } from './services/testcase-importer.js';
+import { TestCaseImporter } from '../src/services/testcase-importer.js';
 
 async function testTestCaseImporter(): Promise<void> {
   console.log(chalk.blue('🧪 Testing Test Case Importer\n'));

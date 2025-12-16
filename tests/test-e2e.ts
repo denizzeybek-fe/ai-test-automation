@@ -1,12 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { JiraService } from './services/jira.service.js';
-import { RuleResolver } from './resolvers/rule-resolver.js';
-import { FolderMapper } from './resolvers/folder-mapper.js';
-import { PromptGenerator } from './services/prompt-generator.js';
-import { TestCaseImporter } from './services/testcase-importer.js';
-import { AnalyticsType } from './types/index.js';
+import { JiraService } from '../src/services/jira.service.js';
+import { RuleResolver } from '../src/resolvers/rule-resolver.js';
+import { FolderMapper } from '../src/resolvers/folder-mapper.js';
+import { PromptGenerator } from '../src/services/prompt-generator.js';
+import { TestCaseImporter } from '../src/services/testcase-importer.js';
+import { AnalyticsType } from '../src/types/index.js';
 
 /**
  * E2E Test: Simulates the complete workflow without BrowserStack API calls

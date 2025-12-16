@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import path from 'path';
 import chalk from 'chalk';
-import { JiraService } from './services/jira.service.js';
-import { RuleResolver } from './resolvers/rule-resolver.js';
-import { PromptGenerator } from './services/prompt-generator.js';
+import { JiraService } from '../src/services/jira.service.js';
+import { RuleResolver } from '../src/resolvers/rule-resolver.js';
+import { PromptGenerator } from '../src/services/prompt-generator.js';
 
 async function testPromptGenerator(): Promise<void> {
   console.log(chalk.blue('🧪 Testing Prompt Generator\n'));

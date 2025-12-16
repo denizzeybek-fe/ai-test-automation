@@ -1,8 +1,8 @@
 import path from 'path';
 import chalk from 'chalk';
-import { RuleResolver } from './resolvers/rule-resolver.js';
-import { FolderMapper } from './resolvers/folder-mapper.js';
-import { AnalyticsType } from './types/index.js';
+import { RuleResolver } from '../src/resolvers/rule-resolver.js';
+import { FolderMapper } from '../src/resolvers/folder-mapper.js';
+import { AnalyticsType } from '../src/types/index.js';
 
 function testResolvers(): void {
   console.log(chalk.blue('🧪 Testing Rule Resolver & Folder Mapper\n'));

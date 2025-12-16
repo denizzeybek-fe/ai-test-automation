@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Orchestrator } from './services/orchestrator.js';
+import { Orchestrator } from '../src/services/orchestrator.js';
 
 async function testOrchestrator(): Promise<void> {
   console.log(chalk.blue.bold('🧪 Testing Orchestrator - End-to-End Flow\n'));

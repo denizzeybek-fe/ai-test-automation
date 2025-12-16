@@ -222,13 +222,13 @@ Run comprehensive tests to catch any issues.
 ### "Rule resolver test failed"
 **Cause**: Keyword patterns changed or config updated
 **Fix**:
-- Update test cases in `src/test-resolvers.ts` to match new patterns
+- Update test cases in `tests/test-resolvers.ts` to match new patterns
 - Check `config/rules.config.json` keyword patterns
 
 ### "Folder mapper test failed"
 **Cause**: Folder IDs changed in config
 **Fix**:
-- Update expected folder IDs in `src/test-e2e.ts` (line ~133)
+- Update expected folder IDs in `tests/test-e2e.ts` (line ~133)
 - Verify BrowserStack folder IDs are correct
 
 ### "Prompt generator test failed"
@@ -242,6 +242,8 @@ Run comprehensive tests to catch any issues.
 **Fix**:
 - Check `src/services/testcase-importer.ts` validation logic
 - Ensure mock data structure matches expected format
+
+**Note**: Test files are located in `tests/` directory, source code is in `src/` directory
 
 ---
 
@@ -318,7 +320,7 @@ This will run the full workflow with a real task.
 
 ### Add E2E Test Case
 
-Edit `src/test-e2e.ts`:
+Edit `tests/test-e2e.ts`:
 
 ```typescript
 // Add new test in runE2ETest()
@@ -342,7 +344,7 @@ try {
 
 ### Add Resolver Test Case
 
-Edit `src/test-resolvers.ts`:
+Edit `tests/test-resolvers.ts`:
 
 ```typescript
 const testCases = [

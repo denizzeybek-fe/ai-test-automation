@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import path from 'path';
 import chalk from 'chalk';
-import { BrowserStackService } from './services/browserstack.service.js';
-import { RuleResolver } from './resolvers/rule-resolver.js';
-import { FolderMapper } from './resolvers/folder-mapper.js';
+import { BrowserStackService } from '../src/services/browserstack.service.js';
+import { RuleResolver } from '../src/resolvers/rule-resolver.js';
+import { FolderMapper } from '../src/resolvers/folder-mapper.js';
 
 async function testPhase2Integration(): Promise<void> {
   console.log(chalk.blue('🧪 Phase 2 Integration Test\n'));
