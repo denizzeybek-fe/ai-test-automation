@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Test Case Rules
+
+Each manual test case must follow the structure below:
+
+### Metadata (Required for each test case):
+- **Title**: A short and descriptive title summarizing the test purpose.
+- **Owner**: The name or ID of the person responsible for the test. You can set this value as "leyla@useinsider.com" for each test.
+- **Priority**: Must be one of the following: `High`, `Medium`, `Low`.
+- **Test Type**: Must be one of the following: `Regression`.
+- **Automation Status**: Must be one of the following: `Not Automated`.
+- **Tags**: Must be **only** `ai-test-case-generation`
+
+### Test Steps:
+Each test step must follow this structure:
+
+- **Step Description**: A clear, sequential instruction (e.g., "Click the Login button").
+- **Expected Result**: The expected behavior or output after the step (e.g., "User is redirected to the dashboard").
+
+You must include at least one test step.
+
+### Summary:
+- Each test need metada.
+- Each test step in test case must have expected result.
+
+---
+
+### Example:
+
+**Title**: Login with valid credentials
+**Owner**: leyla@useinsider.com
+**Priority**: High
+**Test Type**: Regression
+**Automation Status**: Not Automated
+**Tags**: ai-test-case-generation
+
+**Steps:**
+1. Step: Navigate to the login page  
+   Expected Result: Login form is displayed
+
+2. Step: Enter valid username and password  
+   Expected Result: Credentials are accepted
+
+3. Step: Click the "Login" button  
+   Expected Result: User is redirected to the dashboard page

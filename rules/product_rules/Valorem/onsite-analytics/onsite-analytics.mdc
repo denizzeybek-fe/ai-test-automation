@@ -1,16 +1,114 @@
-# Onsite Analytics Product Rules
+---
+description: Documentation for the Onsite Analytics page, which provides performance insights into onsite campaigns with and without control groups. Covers summary and variant-level metrics, filters, comparison, conversion criteria, export options, save as default, share URL, and detailed metric calculation formulas.
+alwaysApply: false
+---
 
-## Overview
-Onsite analytics tracks on-site campaign performance and user engagement.
+## Onsite Analytics General Informations:
 
-## Key Features
-- Campaign performance metrics
-- User engagement tracking
-- Conversion attribution
-- Campaign ROI analysis
+- OnSite Analytics display the analytics of the onsite campaigns. You can see the performance of each variation and control group along with the following summary metrics:
+  - Incremental revenue
+  - Incremental conversions
+  - Conversion rate
+  - Conversion rate uplift
+- There are 2 tabs on the page to view the metrics of your On-Site Campaigns with or without a Control Group.
+- If the control group or variation has 10 impressions or more, it is displayed in the OnSite Campaigns with Control Groups. If a variation without a control group has 10 impressions or more, it is displayed in the OnSite Campaigns without Control Groups.
+- If the control group has less than 10 impressions, it is displayed in the OnSite Campaigns without Control Groups.
+- User can select targets to see metrics for a specific target, filter results to see a narrowed-down set of campaigns, and export results.
+- **Details:** Displays more information related to personalization.
+- **Statistics:** Redirects to the comprehensive statistics page of the respective variant.
+- **Exclude:** Hides the variant from the table.
+- On-Site Campaign Analytics page show summary metrics of onsite products and campaign-level metrics for each variation both with and without control group. The list of products shown on the Onsite Campaign Analytics page is as follows:
+  - Web Templates
+  - InStory
+  - Tab Talk
+  - Onsite Experiment
+  - Category Optimizer
+  - Banner Management
+  - Web Smart Recommender
+- Revenue-related sales metrics are not displayed on the page of partners designated as non-revenue, nor are they exported as reports. For non-revenue partners, several different click-conversion metrics are displayed in place of the revenue metrics deducted based on those criteria.
 
-## Testing Requirements
-- Campaign data accuracy
-- Engagement metrics validation
-- Attribution tracking
-- ROI calculations
+## Comparison
+
+- Historical data comparison helps compare the data between a selected date range and the previous range of the same duration and provides insights about the historical performance of onsite campaigns.
+- Data comparison is disabled by default in the dashboard. It is activated when the Compare button is clicked. Clicking the close button next to the Comparison Range selector closes it.
+- The comparison mechanism takes into account the selected date range and the previous date range of the same duration.
+- Data comparison is interpreted according to the following indicators:
+  - Green label: Represents the increase in the respective figure(s). E.g., ↑3.2%.
+  - Red label: Represents the decrease in the respective figure(s). E.g., ↓1.6%.
+  - \-0.0%: Represents no significant change within the selected period.
+  - N/A: Indicates that comparison for the selected date ranges is not applicable. This might happen when the data for one of the date ranges is 0\.
+- The maximum date range for comparing data is 90 days. Any date range selected over 90 days will not display any comparison, and the Compare button will be disabled.
+- For both selected periods, you can see the compared campaign count above the data table.
+- Exporting data is not supported in comparison mode.
+
+## Conversion Criteria
+
+- Conversion Criteria selection enables seeing conversions, conversion rate, conversion rate uplift, incremental conversions, and significance with respect to the selected criteria. If the user selects clicks, the conversion rate will show the click-through rate (CTR).
+- The selected criteria should have at least 1 conversion for the campaigns to be listed on the dashboard.
+
+## Export
+
+- The page's export feature is used to document the metrics of all campaigns on the page.
+- There are two types of export options: Single and Recurring.
+- A Single Report is downloaded instantly, containing all the data displayed on the page, and is downloaded in xlsx format.
+- A Recurring Report can be configured for daily, weekly, and monthly periods, and with the appropriate filters, it allows you to receive the report via email at regular intervals.
+- In both export formats, users have the option to include or exclude the filters selected on the page in the export.
+
+## Filters
+
+- Filters can be applied that affect the campaign list displayed on the page. Each filter does not directly affect the data; it does not change the values ​​displayed within the campaign; it simply affects the number of campaigns listed and the total data statistics in the summary area.
+- The list of features that users can filter on the page:
+  - Status: Which status of campaigns do you want to list?
+  - Primary Goals
+  - Secondary Goals
+  - Products
+  - Significance
+  - Impressions
+  - Select Variant
+  - Control Groups
+  - Conversions
+
+## Save As Default
+
+- The user can click the Save as Default button to save any changes they make to the page, such as filters.
+- Date pickers, conversion criteria, and comparison settings are not saved by default.
+- The Save as Default action works on a per-user and per-partner basis and is reset when the panel is switched to a different user or partner. However, it should be valid across different sessions, browsers, devices, and operating system changes with the same user and partner information.
+
+## Share URL
+
+- It is used to create a sharing URL where the current version of the page can be copied, along with details such as the changes the user has made to the page, filters, data comparisons, date ranges chosen, etc.
+
+## Metrics Calculations
+
+- Summary Metrics:
+  - Incremental Revenue: Represents the total extra revenue generated by any Insider personalization in A/B testing. Incremental revenue is one of the important indicators that can help decide if a personalization is a winner. The calculation of this metric is based on comparing the performance of the control group and that of the variant (Insider group). **Formula:** Revenue (unique) x ΣIncremental (rev) / ΣVar (rev)
+  - Incremental Conversions: The extra conversions gained from the variants when compared to those from the control groups. Formula: Total Conv (unique) x (ΣIncr. conversions / ΣVar (purchases))
+  - Conversion Rate (CR): Indicates the percentage of your visitors who complete the goal for your personalizations. Calculated separately for control and variant groups. Formula: “Average of Var (CR)= ΣVar (CR) / ## of variants” , “Average of Control groups (CR) \= ΣCG (CR) / ## of CG’s”
+  - Conversion Rate Uplift: Calculated based on the ratio of incremental conversions to the difference between the total conversions and incremental conversions. Formula: Incremental Conv / (Total conversions (unique) \- Incremental Conv)
+  - Average Order Value (AOV): Calculated from unique transaction data. Meaning, if the user saw 3 campaigns and made a purchase, then there’ll be 1 unique purchase. Formula: Unique revenue / Unique conversions
+  - Revenue from Click: Unique revenue that is generated through clicks. Formula: Unique revenue from clicks
+  - Purchases from Clicks: The sum of purchases from clicks for all the variant that has this goal. Formula: Σ Variant (Purchases from clicks) \- unique
+  - Clicks: The sum of variant clicks. Formula: Σ Variant (Clicks) \- not unique
+  - Impressions: The total number of impressions is calculated by summing up the impressions of each variation. Each time a user encounters the campaign on a different device or browser, we increment the impression count by "+1" even if it's within the same session. Formula: Σ Variant (Impressions) \- not unique
+- Variant Metrics:
+  - Current Status: Shows the activation status of the variant (active, test, passive). Accordingly, you can sort the results.
+  - Start Date: The day your personalization is released or set to Active in DD/MM/YYYY format
+  - Incremental Revenue: The extra revenue generated by the variant, calculated by finding the difference between the variant and the control group. Formula: Var(Rev) \- ((Var (Imp) x CG (CR))x CG(AOV))
+  - Conversion Rate Uplift: Calculated based on the conversion rate ratio of the variant to that of the control group. Formula: (Var (CR) \- CG (CR)) / CG (CR)
+  - Average Order Value Uplift: Calculated based on the ratio of the average order value of the variant to that of the control group. The difference between the average order value performance of the variant and control group will give this uplift. Formula: (Var (AOV) \- CG (AOV)) / CG (AOV)
+  - Impressions : The number of visitors who have been in any personalization group. The impressions for the variant and control group are represented separately. Formula: Number of Var impressions \- Number of CG impressions
+  - Significance: The global statistical term for A/B testing reports. Determines whether a report is reliable to take an action depending on it. Significance depends on the size of the experiment, meaning the number of impressions, and the difference in the performance, in other words, uplift. If the significance is near 0%, it means the conversion of the control group is nearly that of the variant group. If the significance is near 100% and the uplift is negative, the conversion of the control group is more than that of the variant group. If the significance is near 100% and the uplift is positive, the conversion of the variant group is more than that of the control group. Formula: Z-Value=ABS((cr_a-cr_base) / (SQRT(((sales_a+sales_base) / (imp_a+imp_base)) (1-((sales_a+sales_base) / (imp_a+imp_base)))(1/imp_base+1/imp_a))))
+  - Probability to Win: Illustrates the performance of the tested variant in achieving the selected conversion goal compared to other variants, including the control group. It serves as an indicator of the likelihood of the variant's success. The percentage is calculated using Bayesian Significance, leveraging the collected data thus far. Formula: P(A|B) \= P(B/A)P(A) / P(B)
+  - Control Group Impressions: It represents the number of CG impressions. Each time a user views the campaign on a device or browser, we increase the impression count by "+1". This count is not affected by changes in the user's device or browser within the same session.
+  - Variation Group Impressions: It represents the number of Var impressions. Each time a user views the campaign on a device or browser, we increase the impression count by "+1". This count is not affected by changes in the user's device or browser within the same session.
+  - Incremental Conversions: The number of extra conversions generated by any personalization group is calculated based on comparing the variant performance to the control group performance. Formula: Var (Conv) \- (Var (Imp) x CG (CR))
+  - Revenue: Shows the revenue gained from any group of your personalization. The revenue for the variant and control group is represented separately. (Revenue gained at each group)
+  - Conversion Rate (CR): Indicates the percentage of your visitors who complete the goal for any group of personalization. It is calculated based on the ratio of conversions to impressions. Formula: Control group: CG (Conv) / CG (Imp)
+  - Variant: Var (Conv) / Var (Imp)
+  - Average Order Value (AOV): Calculated based on the ratio of the total revenue gained by any group of your personalization to the conversions of that group Formula: Control group: “Var (Rev) / Var (Conv)” , ”Variant: Var (Rev) / Var (Conv)”
+  - Control Group Conversions: Shows the number of purchases gained at any group of your personalization. Number of purchases gained through the control group.
+  - Variation Group Conversions Shows the number of purchases gained through the variation. The number of purchases gained through the variation group.
+  - Effective Days: Shows the number of days the variant had more than 10 impressions.
+  - Clicks: Any click on a campaign except for white spaces and the close button is counted as a click.
+  - Unique Revenue: This value is derived from unique transaction data. In other words, a user viewing three campaigns and making a purchase results in a single unique purchase.
+  - Unique Conversion: This value is calculated from unique transaction data. In essence, if a user views 3 campaigns and makes a purchase, it will be counted as 1 unique purchase.

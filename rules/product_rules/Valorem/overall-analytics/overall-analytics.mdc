@@ -1,56 +1,271 @@
-# Overall Analytics Product Rules
+---
+description: Documentation for the Overall Analytics page, including features such as datepicker, drag & drop, select sections, save as default, exports, and detailed product-level metrics across all Insider campaign channels.
+alwaysApply: false
+---
 
-## Overview
-Overall Analytics provides a comprehensive view of user behavior and performance metrics across all products in the Valorem platform.
+# Overall Analytics Page General Info
 
-## Key Features
-1. **Multi-Product Dashboard**: Aggregates data from all Insider products
-2. **Performance Metrics**: Sessions, users, conversion rates, revenue
-3. **Product Cards**: Individual sections for each product (Architect, Eureka, Email, etc.)
-4. **Date Range Filtering**: Custom date selection with comparison mode
-5. **Export Functionality**: Excel export of analytics data
+- The Overall Analytics page provides the total performance, key information, and value of your Insider campaigns across all products on a dedicated analytics page.
+- The dashboard contains metrics in three main categories: Overall Performance, Subscriber Metrics, Product-Level Metrics.
+- It shows summary metrics for OnSite, Web Push, Architect, Email, SMS, WhatsApp and Smart Recommender campaigns.
+- The page only displays information about the products the relevant partner owns. Unused product cards are not displayed.
+- The page does not have visibility based on user permissions; all users can view this page.
+- Revenue-related sales metrics are not displayed on the page of partners designated as non-revenue, nor are they exported as reports. For non-revenue partners, several different click-conversion metrics are displayed in place of the revenue metrics deducted based on those criteria.
 
-## Testing Requirements
+## Datepicker
 
-### Core Functionality
-- Page load and initial data rendering
-- Data accuracy and calculations
-- Product card visibility and interactions
-- Filter operations (date, metrics, goals)
-- Export functionality
+- The page includes a datepicker that displays all product metrics according to the desired date range.
+- Within the datepicker, users can specify start and end dates and filter specific ranges using pre-defined shortcuts.
 
-### Product Cards to Validate
-- Architect (Journey Analytics)
-- Eureka (Site Search)
-- Email Campaigns
-- Mobile App Analytics
-- On-Site Campaigns
-- WebPush Notifications
-- Smart Recommender
+## Drag\&Drop
 
-### Data Validation
-- Metric calculations (sessions, users, conversion rate)
-- Comparison mode calculations
-- Goal tracking and attribution
-- Revenue tracking
+- All cards on the page (Overall Performance, Subscriber Analytics, Onsite Campaigns, Web Push Campaigns, WhatsApp Campaigns, SMS Campaigns, Email Campaigns, Architect Journeys, and Smart Recommender Campaigns) feature drag and drop icons that allow the user to customize the page's layout.
+- The icons on the cards work by dragging and dropping.
+- Every change is saved permanently for each user and partner.
 
-### UI/UX Requirements
-- Responsive design
-- Loading states
-- Error handling
-- Empty states
-- Tooltip information
+## Select Sections
 
-### Performance
-- Page load time < 3 seconds
-- Data refresh without full page reload
-- Smooth scrolling and interactions
+- This feature allows you to enable or disable card visibility on the page. Unwanted cards can be removed or re-added.
+- Unless you save as default, changes made with this feature only work session-based.
+- The card list in the select sections dynamically changes based on the partner's products.
 
-## Common Issues to Test
-1. Data not loading or infinite loading
-2. Incorrect metric calculations
-3. Product cards not displaying
-4. Date range picker issues
-5. Export failures
-6. Filter not applying correctly
-7. Layout breaking on different screen sizes
+## Save as Default
+
+- User can click the Save as Default button to save the metric and product selections to display the report based on the previously saved view.
+- The date picker, drag\&drop, conversion criteria, goals and attribute window settings are not saved as a default.
+- The Save as default action works on a per-user and partner basis and is reset when the panel is switched to a different user or partner. However, it should be valid across different sessions, browsers, devices, and OS changes with the same user and partner information.
+
+## Overall Performance
+
+- This section displays the number of campaigns, total revenue, total conversions, total conversion rate, total conversion rate uplift, and total incremental revenue metrics for the selected date range.
+- All Onsite products are categorized in separate groups in the first row, arctitect and all messaging products in row 2, and Smart Recommender in row 3\.
+- All metrics displayed for Architect and Messaging products should reflect the total of all owned products.
+- The metrics in this field are also shown in the export file.
+
+## Revenue By Channels by Graph
+
+- This channel-based bar displays the total revenue generated by each channel in a single view and provides clear comparisons. An exponential growth chart is used for visualization as the revenue values might be different from each other.
+- It is included in the Overall Performance card and is located below the metric values.
+
+## Total Subscribers
+
+- This section displays the subscriber count for each messaging channel. It shows the value of the current day regardless of the selected date range.
+- You can click the Metrics filter to select the products you want to see.
+- Only Web Push, Email, SMS, and WhatsApp products include the Subscribers metric and are displayed in this card.
+- The metrics in this field are also shown in the export file.
+
+## Export
+
+- The exported report includes all the selected metrics on the dashboard with the exact breakdown on the panel. You can choose the sections and channels you want to export the related key metrics. The export option is available for single export only.
+- Users with Viewer permissions do not have the authority to export from the page. They are informed via the tooltip.
+- All exported files reflect the filter selections at the time of export: daterange, conversion criteria, attribution window, goals, etc.
+- When the Export button is clicked, the export of the page should be downloaded instantly, regardless of what is currently displayed on the page or any settings/filters selected.
+- Metrics for cards disabled in Select Sections are not included in the export.
+- Metrics 2-6 displayed on product cards, as well as the entire metric list, regardless of display, are listed under the product title in the export file.
+- Each export file has a name format, page structure template, and "Overall Analytics" and "Formulas" pages within Excel.
+- The Formulas page contains the calculation formulas for all metrics requiring calculations.
+
+## Onsite Campaigns
+
+- The card consists of two sections: With Control Group and Without Control Group. The metric list, filter list, and data differ from each other. Both sections include a Conversion Criteria dropdown. The user is allowed to select a base conversion.
+- The following metrics appear under With Control Group:
+  - Number of Campaigns
+  - Impressions
+  - Click-Through Rate
+  - CR Uplift
+  - AOV
+  - Incremental Revenue
+  - Clicks
+  - Conversion Rate
+  - Unique Conversions
+  - Incremental Conversions
+- The following filters can be applied under With Control Group:
+  - Statuses
+  - Campaign Types
+  - Primary Goals
+  - Secondary Goals
+  - Platforms
+  - Templates
+  - Significance
+  - Impressions
+  - Conversions
+  - Include Variants
+  - Exclude Variants
+- The following metrics appear under Without Control Group:
+  - Number of Campaigns
+  - Impressions
+  - Click-Through Rate
+  - Purchase From Clicks
+  - AOV
+  - Revenue From Clicks
+  - Clicks
+  - Unique Revenue
+- The following filters can be applied under Without Control Group:
+  - Statuses
+  - Campaign Types
+  - Primary Goals
+  - Secondary Goals
+  - Platforms
+  - Templates
+  - Impressions
+  - Conversions
+  - Include Variants
+  - Exclude Variants
+- All metrics displayed correspond exactly to the Product Analytics page.
+- The user can select 2-6 metrics displayed within the product card.
+- The user-selected filters are displayed and editable in the Applied Filters section.
+- A link to the Onsite Analytics page within the product card allows the user to access more detailed statistics for the relevant product.
+
+## Web Push Campaigns
+
+- The following metrics are displayed within the product card:
+  - Number of Campaigns
+  - Sent
+  - Click-Through Rate
+  - Conversion Rate
+  - Revenue
+  - Opt-in Click-Through Rate
+  - Targeted
+  - Dropped
+  - Delivery Rate
+  - Delivered
+  - Undelivered
+  - Clicks
+  - Conversions
+- The following filters can be applied within the product card:
+  - Statuses
+  - Campaign Types
+  - Tags
+- All metrics displayed correspond exactly to the Product Analytics page.
+- The user can select 2-6 metrics displayed within the product card.
+- The user-selected filters are displayed and editable in the Applied Filters section.
+- A link to the Web Push Analytics page within the product card allows the user to access more detailed statistics for the relevant product.
+
+## Architect Campaigns
+
+- The following metrics are displayed within the product card:
+  - Number of Journeys
+  - Sent
+  - Click Through Rate
+  - Conversion Rate
+  - Revenue
+  - Entered
+  - Dropped
+  - Completed
+  - Exited
+  - Clicks
+  - Conversions
+- The following filters can be applied within the product card:
+  - Statuses
+  - Channels
+  - Journeys
+  - Tags
+- All metrics displayed correspond exactly to the Product Analytics page.
+- The user can select 2-6 metrics displayed within the product card.
+- The user-selected filters are displayed and editable within the Applied Filters section.
+- The user can select the goal they wish to base their analysis on using the "Goal" dropdown within the product card.
+- A link to the Architect Analytics page within the product card allows the user to access more detailed product statistics.
+
+## Email Campaigns
+
+- The following metrics are displayed within the product card:
+  - Number of Campaigns
+  - Sent
+  - Open Rate
+  - Click Through Rate
+  - Conversion Rate
+  - Revenue
+  - Delivery Rate
+  - Delivered
+  - Opens
+  - Unique Opens
+  - Clicks
+  - Unique Clicks
+  - Click-to-Open Rate (CTOR)
+  - Conversions
+- The following filters can be applied within the product card:
+  - Statuses
+  - Campaign Types
+  - Send Date
+  - Tags
+- All metrics displayed correspond exactly to the Product Analytics page.
+- The user can select 2-6 metrics displayed within the product card.
+- The user-selected filters are displayed and editable in the Applied Filters section.
+- A link to the Email Analytics page within the product card allows the user to access more detailed statistics for the relevant product.
+
+## SMS Campaigns
+
+- The following metrics are displayed within the product card:
+  - Number of Campaigns
+  - Sent
+  - Delivery Rate
+  - Click-Through Rate(CTR)
+  - Conversion Rate (CR)
+  - Revenue
+  - Targeted
+  - Dropped
+  - Delivered
+  - Undelivered
+  - SMS Message Parts
+  - MMS Messages
+  - Clicks
+  - Conversions
+- The following filters can be applied within the product card:
+  - Statuses
+  - Campaign Types
+  - Message Types
+  - Tags
+- All metrics displayed correspond exactly to the Product Analytics page.
+- The user can select 2-6 metrics displayed within the product card.
+- The user-selected filters are displayed and editable in the Applied Filters section.
+- A link to the SMS Analytics page within the product card allows the user to access more detailed statistics for the relevant product.
+
+## Whatsapp Campaigns
+
+- The following metrics are displayed within the product card:
+  - Number of Campaigns
+  - Sent
+  - Delivery Rate
+  - Click Through Rate (CTR)
+  - Conversion Rate (CR)
+  - Revenue
+  - Targeted
+  - Dropped
+  - Delivered
+  - Undelivered
+  - Open Rate
+  - Opens
+  - Clicks
+  - Conversions
+- The following filters can be applied within the product card:
+  - Statuses
+  - Campaign Types
+  - Tags
+- All metrics displayed correspond exactly to the Product Analytics page.
+- The user can select 2-6 metrics displayed within the product card.
+- The user-selected filters are displayed and editable in the Applied Filters section.
+- A link to the WhatsApp Analytics page within the product card allows the user to access more detailed statistics for the relevant product.
+
+## Web Smart Recommender Campaigns
+
+- The following metrics are displayed within the product card:
+  - Number of Campaigns
+  - Impressions
+  - Click Through Rate
+  - Add to Cart Rate
+  - Conversion Rate
+  - Direct Revenue
+  - Clicks
+  - Add to Cart (ATC)
+  - Purchases
+  - Assisted Revenue
+  - Orders With Recommended Products
+- The following filters can be applied within the product card:
+  - Statuses
+  - Pages
+  - Platforms
+- All metrics displayed correspond exactly to the Product Analytics page.
+- The user can select 2-6 metrics displayed within the product card.
+- The user-selected filters are displayed and editable in the Applied Filters section.
+- The user can select the desired session duration using the "Attribution Window" dropdown within the product card.
+- A link to the Web Smart Recommender Analytics page within the product card allows the user to access more detailed statistics for the relevant product.

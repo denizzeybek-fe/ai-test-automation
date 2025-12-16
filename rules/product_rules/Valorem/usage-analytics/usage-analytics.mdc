@@ -1,16 +1,107 @@
-# Usage Analytics Product Rules
+---
+description: Documentation for the Usage Analytics page, which tracks partner assets affecting billing (MRR), monitors monthly/combined/no-plan product limits, and provides visibility into usage volumes across web, app, messaging, search, and architect products. Includes details on warnings, notifications, and contract-based tracking.
+alwaysApply: false
+---
 
-## Overview
-Usage analytics tracks platform usage metrics and user activity patterns.
+# Usage Analytics Page General Info
 
-## Key Features
-- Platform usage metrics
-- User activity tracking
-- Feature adoption rates
-- Usage trends analysis
+- The usage analytics dashboard goal is to report the partner’s assets that are subject to their MRR, and if any limits are defined, notify partners' about their limit usages. This allows users to track the assets that affect their billing.
+- To ensure clarity, each product card includes a tag indicating whether the limit is monthly or combined helping customers easily understand their contract terms.
+- User can select and view historical usage data for months within the past 1 year.
+- The limit consumption is calculated and updated on the page on a daily basis.
+- The dashboard is partner-based. Different users that visit the same panel will see the same information.
+- Since assets and limits are defined based on contract terms, the dashboard and notifications now align with the limitation period of each product.
+  - If a product has a monthly limit, it will be displayed and tracked on a monthly basis.
+  - If a product has a combined, it will be displayed and tracked on a contract basis.
+  - If a customer has a mix of monthly and combined limits across different products, each product will be shown with its respective contract period.
+- Due to different calculation methodologies, filtering differences, timezone representations, and data coverage used by product teams on their own pages, the usage metrics shown on product cards don't always match the usage values ​​on product pages. The Usage Analytics page displays all usage without any filters.
+- Except for Data Points, all cards offer three different plan options: Monthly, Combined, and No Plan.
+  - Monthly Plan: The product's usage agreement starts and ends in one month (30 days). Only limit and usage information, along with their rates, are displayed. The month selected on the page displays the limit and usage information for the relevant date range.
+  - Combined Plan: The product's usage agreement can be defined annually, quarterly, or optionally with custom intervals. The user must view the total limit and total usage for all months within the agreement date range. All product cards with a Combined plan also include a Monthly view, which displays only usage data and no limits.
+  - No Plan: Some products allow usage without a contract plan. In this case, no limits are displayed, only usage information.
+- For all partners defined as multi-domains under the same entity, the product cards on the Usage Analytics page list the limits and usage values ​​for each partner/domain separately. All domains are expected to be listed within the cards.
 
-## Testing Requirements
-- Usage metrics accuracy
-- Activity tracking validation
-- Adoption rate calculations
-- Trend analysis correctness
+## Monthly Tracked Web Users
+
+- Shows the total number of users who conducted one or more qualifying actions (e.g. interacting with a browser push notification, visiting the website, adding a product to the shopping cart, etc.) throughout our customers’ websites within the selected calendar month
+
+## Monthly Tracked App Users
+
+- Shows the total number of users who conducted one or more qualifying actions (e.g. interacting with an app push notification, visiting the application, browsing a product through the application, etc.) throughout our customers’ mobile applications within the selected calendar month
+
+## Monthly Tracked 1st Party Users
+
+- Shows the total number of users whose data points are updated (e.g. updating the events or attributes of a user via any kind of data import method such as upserting user data, ingesting user data, uploading segments, etc.) via data sent to Insider by our wide range of integrations within the selected calendar month
+
+## Data Points
+
+- Insider collects and stores a variety of events and attributes for each partner depending on their integration and products. These event and attributes are counted as data points.
+- Unlike other product volume cards, the Data Points field doesn't include a Monthly or Combined plan. It always displays the total number for the selected month.
+- The card contains a cache, and the data is updated at regular intervals.
+
+## MTU Bundle
+
+- If users have the MTU Bundle settings enabled in Gachapon, all Monthly Tracked Web Users, Monthly Tracked App Users, and Monthly Tracked 1st Party Users cards will be displayed together.
+- The combined card's new name will be displayed as "Monthly Tracked Users."
+- Statistics are not cumulative; unique user numbers are displayed.
+- This display must have a single, shared limit and plan information.
+
+## Architect Volume
+
+- The total number of Architect Journeys users entered.
+- If the partner does not have an Architect product, the Architect Volume card will not be displayed on the page.
+- If "Flex Fee" is defined in the partner database, limits are displayed according to the following criteria, and rates can be calculated based on usage.
+  - Enterprise: 5x Purchased MTU Limit
+  - Growth: 3x Purchased MTU Limit
+  - Essential: 1x Purchased MTU Limit
+- If "Flex Fee" is not defined in the partner database, no limits or plans are defined for the Architect product on the Usage Analytics page; only usage is displayed.
+
+## Email Volume
+
+- The total number of email messages sent to recipients in the selected month.
+- If the partner does not have an Email product, the Email Volume card will not be displayed on the page.
+
+## SMS Volume
+
+- The total number of SMS messages sent to recipients in the selected month.
+- If the partner does not have an SMS product, the SMS Volume card will not be displayed on the page.
+- Under the SMS product, the "country" information where the SMS product is used is also listed, and detailed information is provided about how many SMS messages are used from which country.
+
+## MMS Volume
+
+- The total number of MMS messages sent to recipients in the selected month.
+- If the partner does not have an SMS product, the MMS Volume card will not be displayed on the page.
+- Under the MMS product, the "country" information where the MMS product is used is also listed, and detailed information is provided about how many MMS messages are used from which country.
+
+## Whatsapp Volume
+
+- The total number of WhatsApp messages delivered to recipients in the selected month.
+- If the partner does not have an WhatsApp product, the WhatsApp Volume card will not be displayed on the page.
+- Under the WhatsApp product, the "country" information where the WhatsApp product is used is also listed, and detailed information is provided about how many WhatsApp messages are used from which country.
+
+## Eureka Volume
+
+- The total number of search queries made by the end-users in the selected month.
+- If the partner does not have an Eureka product, the Eureka Volume card will not be displayed on the page.
+- In the Eureka card, the desired metric display is provided for each account with the following additional breakdowns:
+  - Search Requests: The number of keystrokes and facet, pagination, sorting clicks.
+  - Category Visit Requests: The number of unique visits to the category pages.
+  - Search Suggestion Requests: The number of keystrokes that generate suggestions multiplied by a 0.2 usage coefficient.
+
+## Warnings & Notifications
+
+- Usage Analytics Warnings:
+  - Nearing Warning: If at least one card on the Usage Analytics page has a usage rate between 80% and 100%, and no card on the page has reached 100%, an approaching warning will be displayed at the top of the page. It will not be displayed at the 79.999% and 100% thresholds. Information about which product cards are exceeding the threshold will not be displayed.
+  - Exceeded Warning: If at least one card's usage rate reaches 100% on the Usage Analytics page, an overage warning will appear at the top of the page. Information about which product cards are overage will not be displayed.
+- Homepage Warning Ribbons:
+  - Nearing Ribbon: If at least one card on the Usage Analytics page has a usage rate between 80% and 100%, and no card on the page has reached 100%, an approaching ribbon will be displayed at the top of the Homepage. It will not be displayed at the 79.999% and 100% thresholds.
+  - Exceeded Ribbon: If at least one card's usage rate reaches 100% on the Usage Analytics page, an exceeded ribbon will appear at the top of the Homepage.
+- Warning Mails:
+  - Nearing Mail:
+    - When the usage rate of cards on the Usage Analytics page reaches 80% (if it doesn't reach 100% directly from 80% usage), a limit approaching warning email titled "Your Usage is Nearing the Limit" is instantly sent to account holders.
+    - The email should list the names of all products that have reached the current Nearing Limit.
+    - Email jobs run daily; all products that reach 80-100% on the same day are delivered in the same email. Separate emails are sent for products nearing the limit on different days.
+  - Exceeded Mail:
+    - When the card usage rate on the Usage Analytics page reaches 100%, a limit exceeding alert email titled "Your Usage Exceeded the Limit" is instantly sent to account holders.
+    - The email should list the names of all products that have reached the current Exceeded Limit.
+    - Email jobs run daily; all products that have exceeded the limit on the same day are delivered in the same email. Separate emails are sent for products exceeded on different days.

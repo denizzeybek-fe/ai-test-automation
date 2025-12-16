@@ -9,6 +9,14 @@ export interface TaskPromptData {
 }
 
 export class PromptGenerator {
+  private minTestCases: number;
+  private maxTestCases: number;
+
+  constructor() {
+    this.minTestCases = parseInt(process.env.AI_MIN_TEST_CASES || '2', 10);
+    this.maxTestCases = parseInt(process.env.AI_MAX_TEST_CASES || '5', 10);
+  }
+
   /**
    * Generate prompt for a single task
    * @param taskInfo - Task information from Jira
@@ -65,7 +73,7 @@ Return **ONLY** valid JSON (no markdown, no code blocks, no explanation):
 \`\`\`
 
 **Important:**
-- Generate 2-5 comprehensive test cases
+- Generate ${this.minTestCases}-${this.maxTestCases} comprehensive test cases
 - Each test case should cover different scenarios
 - Steps should be clear and actionable
 - Expected results should be specific and verifiable
@@ -137,7 +145,7 @@ The JSON must be an object where each key is a task ID, and the value is an arra
 \`\`\`
 
 **Important:**
-- Generate 2-5 comprehensive test cases per task
+- Generate ${this.minTestCases}-${this.maxTestCases} comprehensive test cases per task
 - Keys must be exact task IDs: ${exampleKeys}
 - Each test case should cover different scenarios
 - Steps should be clear and actionable
