@@ -30,8 +30,10 @@ export interface BrowserStackTestCase {
 
 export interface BrowserStackTestRun {
   id: string;
-  title: string;
-  description: string;
+  identifier: string;
+  name: string;
+  title?: string;
+  description?: string;
   run_state: string;
 }
 

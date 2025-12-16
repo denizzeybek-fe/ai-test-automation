@@ -61,18 +61,28 @@ export class Orchestrator {
       console.log(chalk.green(`✅ Task fetched: ${taskInfo.title}\n`));
 
       // Step 2: Resolve analytics type
-      console.log(chalk.yellow('Step 2/6: Resolving analytics type...'));
+      console.log(chalk.yellow('Step 2/8: Resolving analytics type...'));
       const analyticsType = this.ruleResolver.resolve(taskInfo.title);
       console.log(chalk.green(`✅ Analytics type: ${analyticsType}\n`));
 
-      // Step 3: Read rule file
-      console.log(chalk.yellow('Step 3/6: Reading product rules...'));
+      // Step 3: Get parent folder and create task-specific subfolder
+      console.log(chalk.yellow('Step 3/8: Setting up folder structure...'));
+      const parentFolderId = this.folderMapper.getFolderId(analyticsType);
+      const subfolderName = `${taskId} - ${taskInfo.title}`;
+      const subfolder = await this.browserStackService.findOrCreateSubfolder(
+        parentFolderId,
+        subfolderName
+      );
+      console.log(chalk.green(`✅ Subfolder ready: ${subfolderName} (ID: ${subfolder.id})\n`));
+
+      // Step 4: Read rule file
+      console.log(chalk.yellow('Step 4/8: Reading product rules...'));
       const ruleFilePath = this.ruleResolver.getRuleFilePath(analyticsType);
       const ruleContent = this.promptGenerator.readRuleFile(ruleFilePath);
       console.log(chalk.green(`✅ Rules loaded from: ${ruleFilePath}\n`));
 
-      // Step 4: Generate prompt
-      console.log(chalk.yellow('Step 4/6: Generating AI prompt...'));
+      // Step 5: Generate prompt
+      console.log(chalk.yellow('Step 5/8: Generating AI prompt...'));
       const prompt = this.promptGenerator.generateSinglePrompt(
         taskInfo,
         analyticsType,
@@ -97,8 +107,8 @@ export class Orchestrator {
       // Wait for user input
       await this.waitForUserInput();
 
-      // Step 5: Import test cases
-      console.log(chalk.yellow('\nStep 5/6: Importing test cases from AI response...'));
+      // Step 6: Import test cases
+      console.log(chalk.yellow('\nStep 6/8: Importing test cases from AI response...'));
       const responseFilePath = `output/responses/response-${taskId}.json`;
 
       // Wait for file to exist (with timeout)
@@ -107,18 +117,18 @@ export class Orchestrator {
       const testCases = this.testCaseImporter.importSingle(responseFilePath);
       console.log(chalk.green(`✅ Imported ${testCases.length} test cases\n`));
 
-      // Step 6: Create test cases in BrowserStack (with retry)
-      console.log(chalk.yellow('Step 6/6: Creating test cases in BrowserStack...'));
-      const folderId = this.folderMapper.getFolderId(analyticsType);
+      // Step 7: Create test cases in BrowserStack subfolder (with retry)
+      console.log(chalk.yellow('Step 7/8: Creating test cases in BrowserStack...'));
+      const createdTestCaseIds: string[] = [];
 
       for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
         console.log(chalk.gray(`  Creating: ${testCase.name}...`));
 
         try {
-          await withRetry(
+          const createdTestCase = await withRetry(
             () =>
-              this.browserStackService.createTestCase(folderId, {
+              this.browserStackService.createTestCase(subfolder.id, {
                 name: testCase.name,
                 description: testCase.description,
                 preconditions: testCase.preconditions,
@@ -127,6 +137,7 @@ export class Orchestrator {
               }),
             { maxRetries: 3 }
           );
+          createdTestCaseIds.push(createdTestCase.identifier);
         } catch (error) {
           // Log error but continue with other test cases
           ErrorLogger.log(
@@ -140,7 +151,43 @@ export class Orchestrator {
         }
       }
 
-      console.log(chalk.green(`✅ Created ${testCases.length} test cases in BrowserStack\n`));
+      console.log(chalk.green(`✅ Created ${createdTestCaseIds.length} test cases in BrowserStack\n`));
+
+      // Step 8: Link test cases to test run
+      console.log(chalk.yellow('Step 8/8: Linking test cases to test run...'));
+      try {
+        const testRun = await withRetry(
+          () => this.browserStackService.findTestRunByTaskId(taskId),
+          { maxRetries: 3 }
+        );
+
+        if (!testRun) {
+          console.log(chalk.red(`⚠️  Test run not found for task ${taskId}`));
+          ErrorLogger.log(
+            ErrorLogger.createLog(
+              new Error(`Test run not found for task ${taskId}`),
+              taskId,
+              'Find test run'
+            )
+          );
+        } else {
+          await withRetry(
+            () => this.browserStackService.updateTestRunCases(testRun.identifier, createdTestCaseIds),
+            { maxRetries: 3 }
+          );
+          console.log(chalk.green(`✅ Linked ${createdTestCaseIds.length} test cases to test run ${testRun.identifier}\n`));
+        }
+      } catch (error) {
+        ErrorLogger.log(
+          ErrorLogger.createLog(
+            error as Error,
+            taskId,
+            'Link test cases to test run'
+          )
+        );
+        console.log(chalk.red(`⚠️  Failed to link test cases to test run`));
+      }
+
       console.log(chalk.green.bold(`🎉 Task ${taskId} processed successfully!\n`));
 
       return true;

@@ -42,10 +42,10 @@ export class BrowserStackService {
    */
   async listTestRuns(): Promise<BrowserStackTestRun[]> {
     try {
-      const response = await this.client.get<{ data: BrowserStackTestRun[] }>(
+      const response = await this.client.get<{ success: boolean; test_runs: BrowserStackTestRun[] }>(
         `/projects/${this.projectId}/test-runs`
       );
-      return response.data.data || [];
+      return response.data.test_runs || [];
     } catch (error) {
       throw this.handleError(error, 'Failed to list test runs');
     }
@@ -56,25 +56,28 @@ export class BrowserStackService {
    */
   async getTestRun(testRunId: string): Promise<BrowserStackTestRun> {
     try {
-      const response = await this.client.get<BrowserStackTestRun>(
+      const response = await this.client.get<{ success: boolean; data: BrowserStackTestRun }>(
         `/projects/${this.projectId}/test-runs/${testRunId}`
       );
-      return response.data;
+      return response.data.data;
     } catch (error) {
       throw this.handleError(error, `Failed to get test run ${testRunId}`);
     }
   }
 
   /**
-   * Find test run by task ID (searches in title/description)
+   * Find test run by task ID (searches in name field which contains task ID)
    */
   async findTestRunByTaskId(taskId: string): Promise<BrowserStackTestRun | null> {
     try {
       const testRuns = await this.listTestRuns();
-      const found = testRuns.find(
-        (run) =>
-          run.title.includes(taskId) || run.description?.includes(taskId)
-      );
+      // In BrowserStack API, the "name" field contains task ID (e.g., "PA-34858")
+      // UI shows this as TITLE column with description below
+      const found = testRuns.find((run) => {
+        if (!run.name) return false;
+        // Check if name equals task ID exactly or contains it
+        return run.name === taskId || run.name.includes(taskId);
+      });
       return found || null;
     } catch (error) {
       throw this.handleError(error, `Failed to find test run for task ${taskId}`);
@@ -86,7 +89,7 @@ export class BrowserStackService {
    */
   async listFolders(): Promise<BrowserStackFolder[]> {
     try {
-      const response = await this.client.get<{ folders: BrowserStackFolder[] }>(
+      const response = await this.client.get<{ success: boolean; folders: BrowserStackFolder[] }>(
         `/projects/${this.projectId}/folders`
       );
       return response.data.folders || [];
@@ -103,16 +106,39 @@ export class BrowserStackService {
     name: string
   ): Promise<BrowserStackFolder | null> {
     try {
-      const response = await this.client.get<{ data: BrowserStackFolder[] }>(
-        `/projects/${this.projectId}/folders/${parentId}/sub-folders`
-      );
-      const subfolders: BrowserStackFolder[] = response.data.data || [];
-      const found = subfolders.find(
-        (folder) => folder.name.toLowerCase() === name.toLowerCase()
+      // Get all folders and filter by parent_id
+      const allFolders = await this.listFolders();
+      const found = allFolders.find(
+        (folder) =>
+          folder.parent_id === parentId &&
+          folder.name.toLowerCase() === name.toLowerCase()
       );
       return found || null;
     } catch (error) {
       throw this.handleError(error, `Failed to find subfolder '${name}'`);
+    }
+  }
+
+  /**
+   * Find subfolder by name or create if doesn't exist
+   */
+  async findOrCreateSubfolder(
+    parentId: number,
+    name: string
+  ): Promise<BrowserStackFolder> {
+    try {
+      // First try to find existing subfolder
+      const existing = await this.findSubfolder(parentId, name);
+      if (existing) {
+        console.log(`📁 Using existing subfolder: ${name} (ID: ${existing.id})`);
+        return existing;
+      }
+
+      // If not found, create new subfolder
+      console.log(`📁 Creating new subfolder: ${name}`);
+      return await this.createFolder(name, parentId);
+    } catch (error) {
+      throw this.handleError(error, `Failed to find or create subfolder '${name}'`);
     }
   }
 
@@ -124,14 +150,24 @@ export class BrowserStackService {
     parentId: number
   ): Promise<BrowserStackFolder> {
     try {
-      const response = await this.client.post<BrowserStackFolder>(
+      const response = await this.client.post<{ success: boolean; folder: BrowserStackFolder }>(
         `/projects/${this.projectId}/folders`,
         {
-          name,
-          parent_id: parentId,
+          folder: {
+            name,
+            parent_id: parentId,
+          },
         }
       );
-      return response.data;
+
+      // Extract folder data from response
+      const folderData = response.data.folder;
+      console.log(`✅ Created folder: ${folderData.name} (ID: ${folderData.id})`);
+      return {
+        id: folderData.id,
+        name: folderData.name,
+        parent_id: folderData.parent_id,
+      };
     } catch (error) {
       throw this.handleError(error, `Failed to create folder '${name}'`);
     }
@@ -145,13 +181,38 @@ export class BrowserStackService {
     testCase: CreateTestCasePayload
   ): Promise<BrowserStackTestCase> {
     try {
-      const response = await this.client.post<{ identifier: string; name: string }>(
+      // BrowserStack API expects the payload wrapped in "test_case" key
+      // Docs: https://www.browserstack.com/docs/test-management/api-reference/test-cases
+      const payload = {
+        test_case: {
+          name: testCase.name,
+          description: testCase.description,
+          preconditions: testCase.preconditions,
+          test_case_steps: testCase.test_case_steps.map((step) => ({
+            step: step.step,
+            result: step.result,
+          })),
+          tags: testCase.tags,
+        },
+      };
+
+      const response = await this.client.post(
         `/projects/${this.projectId}/folders/${folderId}/test-cases`,
-        testCase
+        payload
       );
+
+      // BrowserStack returns nested response: { data: { test_case: {...} } }
+      const responseData = response.data as { data?: { test_case?: Record<string, unknown> } };
+      const testCaseData = responseData.data?.test_case || {};
+
+      const identifier = (testCaseData.identifier || testCaseData.id) as string;
+      const title = (testCaseData.title || testCaseData.name) as string;
+
+      console.log(`✅ Created test case: ${identifier} - ${title}`);
+
       return {
-        identifier: response.data.identifier,
-        title: response.data.name,
+        identifier,
+        title,
         folder_id: folderId,
       };
     } catch (error) {
@@ -187,7 +248,7 @@ export class BrowserStackService {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
       const status = axiosError.response?.status;
-      const data = axiosError.response?.data as { message?: string };
+      const data = axiosError.response?.data as { message?: string; errors?: unknown };
 
       // Categorize errors
       if (status === 401 || status === 403) {
@@ -201,6 +262,14 @@ export class BrowserStackService {
       }
       if (status === 429) {
         return new Error(`${message}: Rate limit exceeded`);
+      }
+
+      // For 400 errors, include full response data for debugging
+      if (status === 400) {
+        const errorDetails = data?.errors
+          ? JSON.stringify(data.errors, null, 2)
+          : JSON.stringify(data, null, 2);
+        return new Error(`${message}: Bad Request - ${errorDetails}`);
       }
 
       const errorMessage = data?.message || axiosError.message;
