@@ -1,0 +1,16 @@
+# Usage Analytics Product Rules
+
+## Overview
+Usage analytics tracks platform usage metrics and user activity patterns.
+
+## Key Features
+- Platform usage metrics
+- User activity tracking
+- Feature adoption rates
+- Usage trends analysis
+
+## Testing Requirements
+- Usage metrics accuracy
+- Activity tracking validation
+- Adoption rate calculations
+- Trend analysis correctness
