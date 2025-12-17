@@ -60,7 +60,7 @@ const getStatusVariant = (status: TaskInfo['status']) => {
       </p>
     </div>
 
-    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+    <div class="max-h-[400px] overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
       <!-- Empty State -->
       <div v-if="tasks.length === 0" class="p-8 text-center">
         <svg

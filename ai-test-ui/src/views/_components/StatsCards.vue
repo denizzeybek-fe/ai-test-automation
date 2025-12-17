@@ -14,74 +14,62 @@ const successRate = computed(() => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-    <!-- Total Tasks -->
-    <Card padding="sm" :shadow="true">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors">Total Tasks</p>
-          <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 transition-colors">
-            {{ stats.totalTasks }}
-          </p>
+  <Card title="Summary" padding="sm" :shadow="true">
+    <div class="space-y-3">
+      <!-- Total Tasks -->
+      <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Total Tasks</p>
         </div>
-        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        </div>
+        <p class="text-lg font-bold text-gray-900 dark:text-white">{{ stats.totalTasks }}</p>
       </div>
-    </Card>
 
-    <!-- Success Tasks -->
-    <Card padding="sm" :shadow="true">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors">Successful</p>
-          <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1 transition-colors">
-            {{ stats.successTasks }}
-          </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 transition-colors">{{ successRate }}% success rate</p>
+      <!-- Success Tasks -->
+      <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Successful</p>
+            <p class="text-xs text-gray-500 dark:text-gray-500">{{ successRate }}% rate</p>
+          </div>
         </div>
-        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
+        <p class="text-lg font-bold text-green-600 dark:text-green-400">{{ stats.successTasks }}</p>
       </div>
-    </Card>
 
-    <!-- Failed Tasks -->
-    <Card padding="sm" :shadow="true">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors">Failed</p>
-          <p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1 transition-colors">
-            {{ stats.failedTasks }}
-          </p>
+      <!-- Failed Tasks -->
+      <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Failed</p>
         </div>
-        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
+        <p class="text-lg font-bold text-red-600 dark:text-red-400">{{ stats.failedTasks }}</p>
       </div>
-    </Card>
 
-    <!-- Test Cases Created -->
-    <Card padding="sm" :shadow="true">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors">Test Cases</p>
-          <p class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1 transition-colors">
-            {{ stats.testCasesCreated }}
-          </p>
+      <!-- Test Cases Created -->
+      <div class="flex items-center justify-between py-2">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          </div>
+          <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Test Cases</p>
         </div>
-        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
+        <p class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ stats.testCasesCreated }}</p>
       </div>
-    </Card>
-  </div>
+    </div>
+  </Card>
 </template>

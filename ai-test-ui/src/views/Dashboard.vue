@@ -241,31 +241,35 @@ onUnmounted(() => {
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="space-y-6">
-        <!-- Stats Cards -->
-        <StatsCards />
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <!-- Two Column Layout: Left (Workflow) + Right (Monitoring) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Workflow (2/3 width) -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Task Input -->
+          <TaskInput
+            :is-generating="isGenerating"
+            :is-submitting="isSubmitting"
+            :generated-prompt="generatedPrompt"
+            @generate-prompt="handleGeneratePrompt"
+            @submit-response="handleSubmitResponse"
+            @clear="handleClear"
+          />
+        </div>
 
-        <!-- Task Input -->
-        <TaskInput
-          :is-generating="isGenerating"
-          :is-submitting="isSubmitting"
-          :generated-prompt="generatedPrompt"
-          @generate-prompt="handleGeneratePrompt"
-          @submit-response="handleSubmitResponse"
-          @clear="handleClear"
-        />
+        <!-- Right Column: Monitoring (1/3 width) -->
+        <div class="space-y-6">
+          <!-- Stats Cards -->
+          <StatsCards />
 
-        <!-- Two Column Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Execution Viewer (Left) -->
+          <!-- Execution Viewer -->
           <ExecutionViewer
             :logs="executionLogs"
             :is-executing="isGenerating"
             @clear-logs="taskStore.clearLogs"
           />
 
-          <!-- Task List (Right) -->
+          <!-- Task List -->
           <TaskList />
         </div>
       </div>
