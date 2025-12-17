@@ -14,7 +14,7 @@ const successRate = computed(() => {
 </script>
 
 <template>
-  <Card title="Summary" padding="sm" :shadow="true">
+  <Card padding="sm" :shadow="true">
     <div class="grid grid-cols-2 gap-3">
       <!-- Total Tasks -->
       <div class="flex flex-col items-center text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">

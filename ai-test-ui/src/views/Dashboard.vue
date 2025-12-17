@@ -3,10 +3,20 @@ import { onMounted, onUnmounted, computed, ref } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { useSocketStore } from '@/stores/socketStore';
 import { useDarkMode } from '@/composables/useDarkMode';
+import { Toast } from '@/components/ds';
+import { AnalyticsType } from '@/types';
 import TaskInput from './_components/TaskInput.vue';
 import StatsCards from './_components/StatsCards.vue';
 import TaskList from './_components/TaskList.vue';
 import ExecutionViewer from './_components/ExecutionViewer.vue';
+
+interface ToastMessage {
+  id: number;
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+}
+
+let toastIdCounter = 0;
 
 const taskStore = useTaskStore();
 const socketStore = useSocketStore();
@@ -14,6 +24,18 @@ const { isDark, toggle: toggleDarkMode } = useDarkMode();
 
 const executionLogs = computed(() => taskStore.executionLogs.map(log => log.message));
 const connectionStatus = computed(() => socketStore.connectionStatus);
+
+// Toast notifications
+const toasts = ref<ToastMessage[]>([]);
+
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning') => {
+  const id = toastIdCounter++;
+  toasts.value.push({ id, message, type });
+};
+
+const removeToast = (id: number) => {
+  toasts.value = toasts.value.filter(toast => toast.id !== id);
+};
 
 // Two-step flow state
 const isGenerating = ref(false);
@@ -99,6 +121,14 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
       if (browserStack.failedCount > 0) {
         taskStore.addLog(`⚠️  Failed to create: ${browserStack.failedCount} test case(s)`, 'warning');
       }
+
+      // Show success notification
+      if (browserStack.createdCount > 0) {
+        showToast(
+          `Successfully created ${browserStack.createdCount} test case${browserStack.createdCount > 1 ? 's' : ''} in BrowserStack`,
+          'success'
+        );
+      }
     }
 
     // Add or update task in store
@@ -114,7 +144,7 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
         id: taskId,
         title: currentTaskTitle.value || `Test cases for ${taskId}`,
         status: 'success',
-        analyticsType: (currentAnalyticsType.value as any) || 'overall',
+        analyticsType: (currentAnalyticsType.value as AnalyticsType) || AnalyticsType.Overall,
         testCasesCreated: testCasesCount,
         timestamp: Date.now(),
       });
@@ -126,6 +156,9 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     taskStore.addLog(`❌ Error: ${message}`, 'error');
+
+    // Show error notification
+    showToast(`Failed to create test cases: ${message}`, 'error');
 
     // Add or update task with failed status
     const existingTask = taskStore.tasks.find(t => t.id === taskId);
@@ -140,7 +173,7 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
         id: taskId,
         title: currentTaskTitle.value || `Test cases for ${taskId}`,
         status: 'failed',
-        analyticsType: (currentAnalyticsType.value as any) || 'overall',
+        analyticsType: (currentAnalyticsType.value as AnalyticsType) || AnalyticsType.Overall,
         error: message,
         timestamp: Date.now(),
       });
@@ -274,5 +307,16 @@ onUnmounted(() => {
         </div>
       </div>
     </main>
+
+    <!-- Toast Notifications Container -->
+    <div class="fixed top-4 right-4 z-50 space-y-2">
+      <Toast
+        v-for="toast in toasts"
+        :key="toast.id"
+        :message="toast.message"
+        :type="toast.type"
+        @close="removeToast(toast.id)"
+      />
+    </div>
   </div>
 </template>
