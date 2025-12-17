@@ -125,7 +125,7 @@ export class Orchestrator {
       console.log(chalk.cyan.bold('⏸️  MANUAL STEP REQUIRED\n'));
       console.log(chalk.white('Please follow these steps:\n'));
       console.log(chalk.gray('1. Open the prompt file:'));
-      console.log(chalk.gray(`   output/prompts/${promptFileName}\n`));
+      console.log(chalk.yellow(`   output/prompts/${promptFileName}\n`));
       console.log(chalk.gray('2. Copy the entire content'));
       console.log(chalk.gray('3. Paste it into Claude Desktop'));
       console.log(chalk.gray('4. Copy the JSON response from Claude'));

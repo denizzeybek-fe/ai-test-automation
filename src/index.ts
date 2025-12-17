@@ -135,6 +135,7 @@ program
         console.log(
           chalk.white(`❌ Total failed: ${taskIds.length - totalSuccess}/${taskIds.length}\n`)
         );
+        process.exit(0);
       } else {
         // Single batch processing
         console.log(chalk.blue(`📦 Processing ${taskIds.length} task(s)\n`));
@@ -145,6 +146,7 @@ program
         console.log(
           chalk.white(`❌ Failed: ${taskIds.length - successCount}/${taskIds.length}\n`)
         );
+        process.exit(0);
       }
     } catch (error) {
       console.log(chalk.red.bold('\n❌ Fatal Error:\n'));

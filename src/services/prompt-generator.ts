@@ -67,7 +67,7 @@ Return **ONLY** valid JSON (no markdown, no code blocks, no explanation):
         "result": "Expected outcome"
       }
     ],
-    "tags": ["${analyticsType}", "tag2", "tag3"]
+    "tags": ["ai-test-case-generation"]
   }
 ]
 \`\`\`
@@ -77,7 +77,7 @@ Return **ONLY** valid JSON (no markdown, no code blocks, no explanation):
 - Each test case should cover different scenarios
 - Steps should be clear and actionable
 - Expected results should be specific and verifiable
-- Include relevant tags for categorization
+- Tags must be **exactly** ["ai-test-case-generation"] - no other tags
 `;
   }
 
@@ -138,7 +138,7 @@ The JSON must be an object where each key is a task ID, and the value is an arra
           "result": "Expected outcome"
         }
       ],
-      "tags": ["${tasks[0].analyticsType}", "tag2"]
+      "tags": ["ai-test-case-generation"]
     }
   ]${tasks.length > 1 ? `,\n  "${tasks[1].taskInfo.id}": [\n    // ... 2-5 test cases\n  ]` : ''}
 }
@@ -150,7 +150,7 @@ The JSON must be an object where each key is a task ID, and the value is an arra
 - Each test case should cover different scenarios
 - Steps should be clear and actionable
 - Expected results should be specific and verifiable
-- Include relevant tags for categorization
+- Tags must be **exactly** ["ai-test-case-generation"] - no other tags
 `;
   }
 
