@@ -38,7 +38,7 @@ const close = () => {
 };
 
 const colors = {
-  success: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+  success: 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700',
   error: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
   info: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
   warning: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
