@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue';
+import { onMounted, onUnmounted, computed, ref } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { useSocketStore } from '@/stores/socketStore';
 import { useDarkMode } from '@/composables/useDarkMode';
@@ -12,17 +12,83 @@ const taskStore = useTaskStore();
 const socketStore = useSocketStore();
 const { isDark, toggle: toggleDarkMode } = useDarkMode();
 
-const isExecuting = computed(() => taskStore.isExecuting);
 const executionLogs = computed(() => taskStore.executionLogs.map(log => log.message));
 const connectionStatus = computed(() => socketStore.connectionStatus);
 
-const handleTasksSubmit = (taskIds: string[]) => {
-  socketStore.runTasks(taskIds);
+// Two-step flow state
+const isGenerating = ref(false);
+const generatedPrompt = ref<string | null>(null);
+const currentTaskId = ref<string | null>(null);
+
+// Step 1: Generate prompt from Jira task
+const handleGeneratePrompt = async (taskId: string) => {
+  isGenerating.value = true;
+  generatedPrompt.value = null;
+  currentTaskId.value = taskId;
+  taskStore.clearLogs();
+
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    taskStore.addLog(`📥 Fetching task ${taskId} from Jira...`, 'info');
+
+    const response = await fetch(`${apiUrl}/api/prompts/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to generate prompt');
+    }
+
+    const data = await response.json();
+    generatedPrompt.value = data.prompt;
+    taskStore.addLog(`✅ Prompt generated successfully!`, 'success');
+    taskStore.addLog(`📋 Copy the prompt above and paste it into Claude Desktop`, 'info');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    taskStore.addLog(`❌ Error: ${message}`, 'error');
+    generatedPrompt.value = null;
+  } finally {
+    isGenerating.value = false;
+  }
+};
+
+// Step 2: Submit Claude's response and create test cases
+const handleSubmitResponse = async (taskId: string, response: string) => {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    taskStore.addLog(`📤 Submitting response for task ${taskId}...`, 'info');
+
+    const res = await fetch(`${apiUrl}/api/prompts/response`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId, response }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to submit response');
+    }
+
+    const data = await res.json();
+    taskStore.addLog(`✅ Response processed successfully!`, 'success');
+    taskStore.addLog(`📊 Test cases created: ${data.testCases?.length || 0}`, 'success');
+
+    // Clear state for next task
+    generatedPrompt.value = null;
+    currentTaskId.value = null;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    taskStore.addLog(`❌ Error: ${message}`, 'error');
+  }
 };
 
 const handleClear = () => {
   taskStore.clearLogs();
-  taskStore.stopExecution();
+  generatedPrompt.value = null;
+  currentTaskId.value = null;
 };
 
 // Initialize WebSocket connection on mount
@@ -117,8 +183,10 @@ onUnmounted(() => {
 
         <!-- Task Input -->
         <TaskInput
-          :is-executing="isExecuting"
-          @submit="handleTasksSubmit"
+          :is-generating="isGenerating"
+          :generated-prompt="generatedPrompt"
+          @generate-prompt="handleGeneratePrompt"
+          @submit-response="handleSubmitResponse"
           @clear="handleClear"
         />
 
@@ -127,7 +195,7 @@ onUnmounted(() => {
           <!-- Execution Viewer (Left) -->
           <ExecutionViewer
             :logs="executionLogs"
-            :is-executing="isExecuting"
+            :is-executing="isGenerating"
           />
 
           <!-- Task List (Right) -->
