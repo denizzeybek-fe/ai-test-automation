@@ -1,0 +1,44 @@
+---
+description: Documentation for Event Conversion Analytics features and functionality
+alwaysApply: false
+---
+
+# Event Conversion Analytics
+
+Event Conversion Analytics provides tracking and analysis of custom event conversions across Insider products.
+
+## Key Features
+- Custom event tracking and conversion metrics
+- Event-based conversion funnels
+- Cross-product event analytics
+- Event conversion rate analysis
+- Event attribution and tracking
+
+## Testing Requirements
+
+### Core Functionality
+- Event tracking accuracy
+- Conversion calculation correctness
+- Event funnel flow validation
+- Cross-product event consistency
+- Event attribution logic
+
+### UI/UX Requirements
+- Event selection interface
+- Conversion metrics display
+- Event funnel visualization
+- Filter and date range controls
+- Export functionality
+
+### Data Validation
+- Event conversion calculations
+- Funnel drop-off rates
+- Event timing and sequencing
+- Cross-session event tracking
+
+## Common Issues to Test
+1. Event tracking failures
+2. Incorrect conversion calculations
+3. Funnel visualization errors
+4. Event attribution issues
+5. Cross-product event inconsistencies

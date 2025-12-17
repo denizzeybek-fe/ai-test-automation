@@ -4,6 +4,8 @@
     "homepage": 26887302,
     "onsite": 26889616,
     "usage": 26889629,
+    "event-conversion": 26889664,
+    "enigma-sentinel": 28610117,
     "other": 26889696
   },
   "folderNames": {
@@ -11,6 +13,8 @@
     "homepage": "Homepage AI Cases",
     "onsite": "Onsite Analytics AI Cases",
     "usage": "Usage Analytics AI Cases",
+    "event-conversion": "Event Conversion AI Cases",
+    "enigma-sentinel": "Enigma Sentinel AI Cases",
     "other": "Other AI Cases"
   }
 }

@@ -14,6 +14,8 @@ export enum AnalyticsType {
   Homepage = 'homepage',
   Onsite = 'onsite',
   Usage = 'usage',
+  EventConversion = 'event-conversion',
+  EnigmaSentinel = 'enigma-sentinel',
   Other = 'other',
 }
 

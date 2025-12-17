@@ -275,11 +275,13 @@ export class Orchestrator {
     console.log(chalk.white('  2. Homepage Analytics'));
     console.log(chalk.white('  3. Onsite Analytics'));
     console.log(chalk.white('  4. Usage Analytics'));
-    console.log(chalk.white('  5. Other'));
-    console.log(chalk.gray('  6. Skip this task\n'));
+    console.log(chalk.white('  5. Event Conversion Analytics'));
+    console.log(chalk.white('  6. Enigma Sentinel'));
+    console.log(chalk.white('  7. Other'));
+    console.log(chalk.gray('  8. Skip this task\n'));
 
     return new Promise((resolve) => {
-      process.stdout.write(chalk.yellow('Your choice [1-6]: '));
+      process.stdout.write(chalk.yellow('Your choice [1-8]: '));
 
       const onData = (data: Buffer): void => {
         const choice = data.toString().trim();
@@ -301,9 +303,15 @@ export class Orchestrator {
             resolve(AnalyticsType.Usage);
             break;
           case '5':
-            resolve(AnalyticsType.Other);
+            resolve(AnalyticsType.EventConversion);
             break;
           case '6':
+            resolve(AnalyticsType.EnigmaSentinel);
+            break;
+          case '7':
+            resolve(AnalyticsType.Other);
+            break;
+          case '8':
             resolve('skip');
             break;
           default:
