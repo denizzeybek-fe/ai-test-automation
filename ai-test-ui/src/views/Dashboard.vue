@@ -19,6 +19,8 @@ const connectionStatus = computed(() => socketStore.connectionStatus);
 const isGenerating = ref(false);
 const generatedPrompt = ref<string | null>(null);
 const currentTaskId = ref<string | null>(null);
+const currentTaskTitle = ref<string | null>(null);
+const currentAnalyticsType = ref<string | null>(null);
 
 // Step 1: Generate prompt from Jira task
 const handleGeneratePrompt = async (taskId: string) => {
@@ -44,7 +46,11 @@ const handleGeneratePrompt = async (taskId: string) => {
 
     const data = await response.json();
     generatedPrompt.value = data.prompt;
+    currentTaskTitle.value = data.taskTitle || `Task ${taskId}`;
+    currentAnalyticsType.value = data.analyticsType || 'overall';
+
     taskStore.addLog(`✅ Prompt generated successfully!`, 'success');
+    taskStore.addLog(`📋 Analytics Type: ${currentAnalyticsType.value}`, 'info');
     taskStore.addLog(`📋 Copy the prompt above and paste it into Claude Desktop`, 'info');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -73,8 +79,29 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
     }
 
     const data = await res.json();
+    const testCasesCount = data.testCases?.length || 0;
+
     taskStore.addLog(`✅ Response processed successfully!`, 'success');
-    taskStore.addLog(`📊 Test cases created: ${data.testCases?.length || 0}`, 'success');
+    taskStore.addLog(`📊 Test cases created: ${testCasesCount}`, 'success');
+
+    // Add or update task in store
+    const existingTask = taskStore.tasks.find(t => t.id === taskId);
+    if (existingTask) {
+      taskStore.updateTask(taskId, {
+        status: 'success',
+        testCasesCreated: testCasesCount,
+        timestamp: Date.now(),
+      });
+    } else {
+      taskStore.addTask({
+        id: taskId,
+        title: currentTaskTitle.value || `Test cases for ${taskId}`,
+        status: 'success',
+        analyticsType: (currentAnalyticsType.value as any) || 'overall',
+        testCasesCreated: testCasesCount,
+        timestamp: Date.now(),
+      });
+    }
 
     // Clear state for next task
     generatedPrompt.value = null;
@@ -82,6 +109,25 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     taskStore.addLog(`❌ Error: ${message}`, 'error');
+
+    // Add or update task with failed status
+    const existingTask = taskStore.tasks.find(t => t.id === taskId);
+    if (existingTask) {
+      taskStore.updateTask(taskId, {
+        status: 'failed',
+        error: message,
+        timestamp: Date.now(),
+      });
+    } else {
+      taskStore.addTask({
+        id: taskId,
+        title: currentTaskTitle.value || `Test cases for ${taskId}`,
+        status: 'failed',
+        analyticsType: (currentAnalyticsType.value as any) || 'overall',
+        error: message,
+        timestamp: Date.now(),
+      });
+    }
   }
 };
 

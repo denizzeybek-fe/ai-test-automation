@@ -106,6 +106,7 @@ router.post('/generate', async (req, res) => {
     return res.json({
       success: true,
       taskId,
+      taskTitle: taskInfo.title,
       prompt,
       analyticsType,
       promptFile: `output/prompts/${promptFileName}`,
