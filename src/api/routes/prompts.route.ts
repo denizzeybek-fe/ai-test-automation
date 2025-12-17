@@ -1,6 +1,21 @@
 import { Router } from 'express';
+import { JiraService } from '../../services/jira.service.js';
+import { RuleResolver } from '../../resolvers/rule-resolver.js';
+import { PromptGenerator } from '../../services/prompt-generator.js';
+import { TestCaseImporter } from '../../services/testcase-importer.js';
+import path from 'path';
 
 const router = Router();
+
+// Initialize services
+const jiraService = new JiraService(
+  process.env.JIRA_BASE_URL || '',
+  process.env.JIRA_EMAIL || '',
+  process.env.JIRA_API_TOKEN || ''
+);
+const ruleResolver = new RuleResolver(path.join(process.cwd(), 'config/rules.config.json'));
+const promptGenerator = new PromptGenerator();
+const testCaseImporter = new TestCaseImporter();
 
 /**
  * @swagger
@@ -60,7 +75,7 @@ const router = Router();
  *       404:
  *         description: Task not found in Jira
  */
-router.post('/generate', (req, res) => {
+router.post('/generate', async (req, res) => {
   try {
     const { taskId } = req.body as { taskId?: string };
 
@@ -71,20 +86,29 @@ router.post('/generate', (req, res) => {
       });
     }
 
-    // TODO:
     // 1. Fetch task from Jira
+    const taskInfo = await jiraService.getTask(taskId);
+
     // 2. Resolve analytics type
+    const analyticsType = ruleResolver.resolve(taskInfo.title);
+
     // 3. Load rule file
-    // 4. Generate prompt using PromptManager
+    const ruleFilePath = ruleResolver.getRuleFilePath(analyticsType);
+    const ruleContent = promptGenerator.readRuleFile(ruleFilePath);
 
-    const samplePrompt = `# Test Case Generation Request
+    // 4. Generate prompt
+    const prompt = promptGenerator.generateSinglePrompt(taskInfo, analyticsType, ruleContent);
 
-Generate test cases for task ${taskId}...`;
+    // 5. Save prompt to file
+    const promptFileName = `prompt-${taskId}-${Date.now()}.md`;
+    promptGenerator.savePromptToFile(prompt, promptFileName);
 
     return res.json({
       success: true,
       taskId,
-      prompt: samplePrompt,
+      prompt,
+      analyticsType,
+      promptFile: `output/prompts/${promptFileName}`,
       timestamp: Date.now(),
     });
   } catch (error) {
@@ -113,7 +137,7 @@ Generate test cases for task ${taskId}...`;
  *       400:
  *         description: Invalid request
  */
-router.post('/response', (req, res) => {
+router.post('/response', async (req, res) => {
   try {
     const { taskId, response } = req.body as { taskId?: string; response?: string };
 
@@ -124,13 +148,22 @@ router.post('/response', (req, res) => {
       });
     }
 
-    // TODO: Save response and parse test cases
-    // Use PromptManager.saveResponse()
+    // 1. Save response to file
+    const responseFileName = `response-${taskId}-${Date.now()}.json`;
+    const responseFilePath = `output/responses/${responseFileName}`;
+    const fs = await import('fs/promises');
+    await fs.writeFile(responseFilePath, response, 'utf-8');
+
+    // 2. Parse test cases from response
+    const testCases = testCaseImporter.importSingle(responseFilePath);
 
     return res.json({
       success: true,
-      message: 'Response saved successfully',
+      message: 'Response saved and parsed successfully',
       taskId,
+      responseFile: responseFilePath,
+      testCasesCount: testCases.length,
+      testCases,
     });
   } catch (error) {
     return res.status(500).json({

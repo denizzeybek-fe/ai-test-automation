@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import { Orchestrator } from '../../services/orchestrator.js';
 
 const router = Router();
+const orchestrator = new Orchestrator();
 
 /**
  * @swagger
@@ -84,11 +86,21 @@ router.post('/run', (req, res) => {
       });
     }
 
-    // TODO: Call Orchestrator to process tasks
-    // For now, return success
+    // Start processing in background (don't await)
+    // WebSocket will emit progress updates
+    // This endpoint just acknowledges the request
+    void orchestrator
+      .processBatchTasks(taskIds)
+      .then((successCount) => {
+        console.log(`✅ Batch processing completed: ${successCount}/${taskIds.length} tasks`);
+      })
+      .catch((error) => {
+        console.error(`❌ Batch processing error:`, error);
+      });
+
     return res.json({
       success: true,
-      message: `Processing ${taskIds.length} task(s)`,
+      message: `Processing ${taskIds.length} task(s) started. Use WebSocket for real-time updates.`,
       taskIds,
     });
   } catch (error) {

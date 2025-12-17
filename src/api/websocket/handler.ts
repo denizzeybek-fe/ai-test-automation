@@ -1,4 +1,5 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
+import { Orchestrator } from '../../services/orchestrator.js';
 
 enum WebSocketEvent {
   // Client -> Server
@@ -25,6 +26,8 @@ interface StepPayload {
 }
 
 export function initializeWebSocket(io: SocketIOServer): void {
+  const orchestrator = new Orchestrator();
+
   io.on('connection', (socket: Socket) => {
     console.log(`✅ Client connected: ${socket.id}`);
 
@@ -35,38 +38,73 @@ export function initializeWebSocket(io: SocketIOServer): void {
       try {
         const { taskIds } = payload;
 
-        // TODO: Integrate with Orchestrator
-        // For now, simulate progress
+        if (!taskIds || taskIds.length === 0) {
+          socket.emit(WebSocketEvent.Error, {
+            success: false,
+            error: 'taskIds array is required',
+          });
+          return;
+        }
+
+        // Process tasks with orchestrator
+        // Note: This uses batch mode which requires manual prompt/response interaction
+        // For API mode, we'll need to modify the orchestrator to accept callbacks
+
+        const totalTasks = taskIds.length;
+        let completedTasks = 0;
+
         for (let i = 0; i < taskIds.length; i++) {
           const taskId = taskIds[i];
 
-          // Emit step progress
-          const stepPayload: StepPayload = {
+          // Emit starting step
+          socket.emit(WebSocketEvent.Step, {
             taskId,
             step: i + 1,
-            total: taskIds.length,
+            total: totalTasks,
             message: `Processing ${taskId}...`,
             status: 'in-progress',
-          };
+          } as StepPayload);
 
-          socket.emit(WebSocketEvent.Step, stepPayload);
+          try {
+            // Process single task
+            const success = await orchestrator.processSingleTask(taskId);
 
-          // Simulate work
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          // Mark completed
-          socket.emit(WebSocketEvent.Step, {
-            ...stepPayload,
-            message: `Completed ${taskId}`,
-            status: 'completed',
-          });
+            if (success) {
+              completedTasks++;
+              socket.emit(WebSocketEvent.Step, {
+                taskId,
+                step: i + 1,
+                total: totalTasks,
+                message: `Completed ${taskId}`,
+                status: 'completed',
+              } as StepPayload);
+            } else {
+              socket.emit(WebSocketEvent.Step, {
+                taskId,
+                step: i + 1,
+                total: totalTasks,
+                message: `Failed ${taskId}`,
+                status: 'failed',
+              } as StepPayload);
+            }
+          } catch (error) {
+            socket.emit(WebSocketEvent.Step, {
+              taskId,
+              step: i + 1,
+              total: totalTasks,
+              message: `Error: ${(error as Error).message}`,
+              status: 'failed',
+            } as StepPayload);
+          }
         }
 
         // All done
         socket.emit(WebSocketEvent.Completed, {
           success: true,
           taskIds,
-          message: `Successfully processed ${taskIds.length} task(s)`,
+          completed: completedTasks,
+          failed: totalTasks - completedTasks,
+          message: `Processed ${completedTasks}/${totalTasks} task(s) successfully`,
         });
       } catch (error) {
         socket.emit(WebSocketEvent.Error, {
