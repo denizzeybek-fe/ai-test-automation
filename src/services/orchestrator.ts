@@ -275,7 +275,7 @@ export class Orchestrator {
     console.log(chalk.white('  2. Homepage Analytics'));
     console.log(chalk.white('  3. Onsite Analytics'));
     console.log(chalk.white('  4. Usage Analytics'));
-    console.log(chalk.white('  5. Event Conversion Analytics'));
+    console.log(chalk.white('  5. Event Conversion'));
     console.log(chalk.white('  6. Enigma Sentinel'));
     console.log(chalk.white('  7. Other'));
     console.log(chalk.gray('  8. Skip this task\n'));

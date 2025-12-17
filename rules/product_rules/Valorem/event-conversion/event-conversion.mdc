@@ -1,11 +1,11 @@
 ---
-description: Documentation for Event Conversion Analytics features and functionality
+description: Documentation for Event Conversion features and functionality
 alwaysApply: false
 ---
 
-# Event Conversion Analytics
+# Event Conversion
 
-Event Conversion Analytics provides tracking and analysis of custom event conversions across Insider products.
+Event Conversion provides tracking and analysis of custom event conversions across Insider products.
 
 ## Key Features
 - Custom event tracking and conversion metrics
