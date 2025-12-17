@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
-import { Card, Spinner } from '@/components/ds';
+import { Card, Spinner, Button } from '@/components/ds';
 
 interface Props {
   logs: string[];
@@ -8,6 +8,10 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  clearLogs: [];
+}>();
 
 const logsContainer = ref<HTMLElement | null>(null);
 
@@ -33,8 +37,20 @@ const formatTimestamp = () => {
 </script>
 
 <template>
-  <Card title="Execution Logs" padding="none">
+  <Card padding="none">
     <div class="h-[500px] flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Execution Logs</h3>
+        <Button
+          v-if="logs.length > 0"
+          variant="secondary"
+          size="sm"
+          @click="emit('clearLogs')"
+        >
+          Clear Logs
+        </Button>
+      </div>
       <!-- Logs Container -->
       <div
         ref="logsContainer"

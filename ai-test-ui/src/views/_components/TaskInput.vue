@@ -4,6 +4,7 @@ import { Card, Input, Button } from '@/components/ds';
 
 interface Props {
   isGenerating: boolean;
+  isSubmitting: boolean;
   generatedPrompt: string | null;
 }
 
@@ -79,12 +80,12 @@ const copyPrompt = () => {
 
 <template>
   <Card title="Generate Test Cases">
-    <div class="space-y-6">
+    <div class="space-y-4">
       <!-- Step 1: Task ID Input -->
-      <div class="space-y-4">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-bold">1</span>
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Enter Task ID</h3>
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold">1</span>
+          <h3 class="text-xs font-semibold text-gray-900 dark:text-white">Enter Task ID</h3>
         </div>
 
         <Input
@@ -107,71 +108,77 @@ const copyPrompt = () => {
         </Button>
       </div>
 
-      <!-- Step 2: Prompt Display -->
-      <div v-if="generatedPrompt" class="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-bold">2</span>
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Copy Prompt to Claude</h3>
-        </div>
+      <!-- Step 2 & 3: Prompt and Response Side by Side -->
+      <div v-if="generatedPrompt" class="pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Step 2: Prompt Display -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold">2</span>
+              <h3 class="text-xs font-semibold text-gray-900 dark:text-white">Copy Prompt to Claude</h3>
+            </div>
 
-        <div class="relative">
-          <div class="max-h-60 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-sm">
-            <pre class="whitespace-pre-wrap text-gray-900 dark:text-gray-100">{{ generatedPrompt }}</pre>
+            <div class="relative">
+              <div class="h-64 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs">
+                <pre class="whitespace-pre-wrap text-gray-900 dark:text-gray-100">{{ generatedPrompt }}</pre>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                class="absolute top-2 right-2"
+                @click="copyPrompt"
+              >
+                Copy
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            class="absolute top-2 right-2"
-            @click="copyPrompt"
-          >
-            Copy
-          </Button>
+
+          <!-- Step 3: Response Input -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold">3</span>
+              <h3 class="text-xs font-semibold text-gray-900 dark:text-white">Paste Claude Response</h3>
+            </div>
+
+            <div>
+              <textarea
+                v-model="responseInput"
+                rows="11"
+                placeholder='Paste Claude response here (JSON format)...'
+                :disabled="isSubmitting"
+                class="w-full h-64 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="{ 'border-red-500': responseError }"
+              />
+              <p v-if="responseError" class="mt-1 text-sm text-red-600">
+                {{ responseError }}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          Copy this prompt and paste it into Claude Desktop. Then paste Claude's response below.
-        </p>
-      </div>
-
-      <!-- Step 3: Response Input -->
-      <div v-if="generatedPrompt" class="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-bold">3</span>
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Paste Claude Response</h3>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Response JSON <span class="text-red-500">*</span>
-          </label>
-          <textarea
-            v-model="responseInput"
-            rows="8"
-            placeholder='Paste Claude response here (JSON format)...'
-            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :class="{ 'border-red-500': responseError }"
-          />
-          <p v-if="responseError" class="mt-1 text-sm text-red-600">
-            {{ responseError }}
-          </p>
-        </div>
-
-        <div class="flex items-center gap-3">
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-3 mt-4">
           <Button
             variant="primary"
-            :disabled="!responseInput.trim()"
+            :disabled="!responseInput.trim() || isSubmitting"
+            :loading="isSubmitting"
             @click="handleSubmitResponse"
           >
-            Submit Response
+            {{ isSubmitting ? 'Creating Test Cases...' : 'Submit Response' }}
           </Button>
 
           <Button
             variant="secondary"
+            :disabled="isSubmitting"
             @click="handleClear"
           >
             Clear All
           </Button>
         </div>
+
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+          Copy the prompt above and paste it into Claude Desktop. Then paste Claude's response in the right panel.
+        </p>
       </div>
 
       <!-- Help Text (Step 1 only) -->

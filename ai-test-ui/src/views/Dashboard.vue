@@ -17,6 +17,7 @@ const connectionStatus = computed(() => socketStore.connectionStatus);
 
 // Two-step flow state
 const isGenerating = ref(false);
+const isSubmitting = ref(false);
 const generatedPrompt = ref<string | null>(null);
 const currentTaskId = ref<string | null>(null);
 const currentTaskTitle = ref<string | null>(null);
@@ -63,6 +64,7 @@ const handleGeneratePrompt = async (taskId: string) => {
 
 // Step 2: Submit Claude's response and create test cases
 const handleSubmitResponse = async (taskId: string, response: string) => {
+  isSubmitting.value = true;
   try {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     taskStore.addLog(`📤 Submitting response for task ${taskId}...`, 'info');
@@ -143,6 +145,8 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
         timestamp: Date.now(),
       });
     }
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -245,6 +249,7 @@ onUnmounted(() => {
         <!-- Task Input -->
         <TaskInput
           :is-generating="isGenerating"
+          :is-submitting="isSubmitting"
           :generated-prompt="generatedPrompt"
           @generate-prompt="handleGeneratePrompt"
           @submit-response="handleSubmitResponse"
@@ -257,6 +262,7 @@ onUnmounted(() => {
           <ExecutionViewer
             :logs="executionLogs"
             :is-executing="isGenerating"
+            @clear-logs="taskStore.clearLogs"
           />
 
           <!-- Task List (Right) -->
