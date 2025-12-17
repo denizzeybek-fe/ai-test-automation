@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { JiraService } from '../../services/jira.service.js';
 import { RuleResolver } from '../../resolvers/rule-resolver.js';
+import { FolderMapper } from '../../resolvers/folder-mapper.js';
 import { PromptGenerator } from '../../services/prompt-generator.js';
 import { TestCaseImporter } from '../../services/testcase-importer.js';
+import { BrowserStackService } from '../../services/browserstack.service.js';
+import { ErrorLogger } from '../../utils/error-logger.js';
+import { withRetry } from '../../utils/with-retry.js';
 import path from 'path';
 
 const router = Router();
@@ -14,8 +18,14 @@ const jiraService = new JiraService(
   process.env.JIRA_API_TOKEN || ''
 );
 const ruleResolver = new RuleResolver(path.join(process.cwd(), 'config/rules.config.json'));
+const folderMapper = new FolderMapper(path.join(process.cwd(), 'config/folders.config.json'));
 const promptGenerator = new PromptGenerator();
 const testCaseImporter = new TestCaseImporter();
+const browserStackService = new BrowserStackService(
+  process.env.BROWSERSTACK_USERNAME || '',
+  process.env.BROWSERSTACK_ACCESS_KEY || '',
+  process.env.BROWSERSTACK_PROJECT_ID || ''
+);
 
 /**
  * @swagger
@@ -140,7 +150,12 @@ router.post('/generate', async (req, res) => {
  */
 router.post('/response', async (req, res) => {
   try {
-    const { taskId, response } = req.body as { taskId?: string; response?: string };
+    const { taskId, response, taskTitle, analyticsType } = req.body as {
+      taskId?: string;
+      response?: string;
+      taskTitle?: string;
+      analyticsType?: string;
+    };
 
     if (!taskId || !response) {
       return res.status(400).json({
@@ -158,13 +173,70 @@ router.post('/response', async (req, res) => {
     // 2. Parse test cases from response
     const testCases = testCaseImporter.importSingle(responseFilePath);
 
+    // 3. Get task info if not provided
+    let finalTaskTitle = taskTitle;
+    let finalAnalyticsType = analyticsType;
+
+    if (!finalTaskTitle || !finalAnalyticsType) {
+      const taskInfo = await jiraService.getTask(taskId);
+      finalTaskTitle = finalTaskTitle || taskInfo.title;
+      finalAnalyticsType = finalAnalyticsType || ruleResolver.resolve(taskInfo.title);
+    }
+
+    // 4. Create BrowserStack folder and test cases
+    const parentFolderId = folderMapper.getFolderId(finalAnalyticsType as any);
+    const subfolderName = `${taskId} - ${finalTaskTitle}`;
+    const subfolder = await browserStackService.findOrCreateSubfolder(
+      parentFolderId,
+      subfolderName
+    );
+
+    // 5. Create test cases in BrowserStack
+    const createdTestCaseIds: string[] = [];
+    const failedTestCases: string[] = [];
+
+    for (const testCase of testCases) {
+      try {
+        const createdTestCase = await withRetry(
+          () =>
+            browserStackService.createTestCase(subfolder.id, {
+              name: testCase.name,
+              description: testCase.description,
+              preconditions: testCase.preconditions,
+              test_case_steps: testCase.test_case_steps,
+              tags: testCase.tags,
+            }),
+          { maxRetries: 3 }
+        );
+        createdTestCaseIds.push(createdTestCase.identifier);
+      } catch (error) {
+        // Log error but continue with other test cases
+        ErrorLogger.log(
+          ErrorLogger.createLog(
+            error as Error,
+            taskId,
+            `Create test case: ${testCase.name}`
+          )
+        );
+        failedTestCases.push(testCase.name);
+      }
+    }
+
     return res.json({
       success: true,
-      message: 'Response saved and parsed successfully',
+      message: 'Test cases created in BrowserStack',
       taskId,
       responseFile: responseFilePath,
       testCasesCount: testCases.length,
       testCases,
+      browserStack: {
+        folderId: subfolder.id,
+        folderName: subfolderName,
+        createdCount: createdTestCaseIds.length,
+        failedCount: failedTestCases.length,
+        createdTestCaseIds,
+        failedTestCases,
+      },
     });
   } catch (error) {
     return res.status(500).json({

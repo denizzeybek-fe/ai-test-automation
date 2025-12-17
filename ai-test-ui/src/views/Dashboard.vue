@@ -70,7 +70,12 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
     const res = await fetch(`${apiUrl}/api/prompts/response`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId, response }),
+      body: JSON.stringify({
+        taskId,
+        response,
+        taskTitle: currentTaskTitle.value,
+        analyticsType: currentAnalyticsType.value,
+      }),
     });
 
     if (!res.ok) {
@@ -80,9 +85,19 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
 
     const data = await res.json();
     const testCasesCount = data.testCases?.length || 0;
+    const browserStack = data.browserStack;
 
     taskStore.addLog(`✅ Response processed successfully!`, 'success');
-    taskStore.addLog(`📊 Test cases created: ${testCasesCount}`, 'success');
+    taskStore.addLog(`📊 Test cases parsed: ${testCasesCount}`, 'success');
+
+    if (browserStack) {
+      taskStore.addLog(`📁 BrowserStack folder: ${browserStack.folderName}`, 'info');
+      taskStore.addLog(`✅ Created in BrowserStack: ${browserStack.createdCount}/${testCasesCount}`, 'success');
+
+      if (browserStack.failedCount > 0) {
+        taskStore.addLog(`⚠️  Failed to create: ${browserStack.failedCount} test case(s)`, 'warning');
+      }
+    }
 
     // Add or update task in store
     const existingTask = taskStore.tasks.find(t => t.id === taskId);
