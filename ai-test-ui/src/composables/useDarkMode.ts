@@ -21,10 +21,9 @@ const loadFromStorage = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored !== null) {
       return stored === 'true';
-    } else {
-      // Default to system preference
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
+    // Default to system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   } catch (error) {
     console.error('Failed to load dark mode preference:', error);
     return false;
@@ -38,6 +37,19 @@ const saveToStorage = (value: boolean) => {
   } catch (error) {
     console.error('Failed to save dark mode preference:', error);
   }
+};
+
+// Shared functions (created once)
+const toggle = () => {
+  isDark.value = !isDark.value;
+};
+
+const enable = () => {
+  isDark.value = true;
+};
+
+const disable = () => {
+  isDark.value = false;
 };
 
 // Initialize once
@@ -54,18 +66,6 @@ if (!initialized) {
 }
 
 export function useDarkMode() {
-  const toggle = () => {
-    isDark.value = !isDark.value;
-  };
-
-  const enable = () => {
-    isDark.value = true;
-  };
-
-  const disable = () => {
-    isDark.value = false;
-  };
-
   return {
     isDark,
     toggle,
