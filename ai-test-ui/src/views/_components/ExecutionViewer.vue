@@ -54,7 +54,7 @@ const formatTimestamp = () => {
       <!-- Logs Container -->
       <div
         ref="logsContainer"
-        class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 font-mono text-sm"
+        class="flex-1 overflow-y-auto p-4 bg-slate-50/50 dark:bg-gray-900 font-mono text-sm"
       >
         <!-- Empty State -->
         <div
@@ -93,7 +93,7 @@ const formatTimestamp = () => {
           <div
             v-for="(log, index) in logs"
             :key="index"
-            class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded transition-colors"
+            class="text-slate-700 dark:text-gray-300 hover:bg-slate-100/70 dark:hover:bg-gray-800 px-2 py-1 rounded transition-colors"
           >
             <span class="text-gray-500 dark:text-gray-500 mr-2">[{{ formatTimestamp() }}]</span>
             <span
@@ -109,8 +109,8 @@ const formatTimestamp = () => {
       </div>
 
       <!-- Footer with Status -->
-      <div class="px-4 py-2 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <div class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+      <div class="px-4 py-2 bg-slate-100/50 dark:bg-gray-800 border-t border-slate-200/60 dark:border-gray-700 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-gray-400">
           <span v-if="isExecuting" class="flex items-center gap-1">
             <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
             Executing...
@@ -120,7 +120,7 @@ const formatTimestamp = () => {
             Idle
           </span>
         </div>
-        <div class="text-xs text-gray-600 dark:text-gray-400">
+        <div class="text-xs text-slate-600 dark:text-gray-400">
           {{ logs.length }} log line(s)
         </div>
       </div>

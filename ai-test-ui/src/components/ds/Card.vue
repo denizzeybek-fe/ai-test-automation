@@ -16,9 +16,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const cardClasses = computed(() => {
-  const base = 'bg-white dark:bg-gray-800 rounded-lg transition-colors';
-  const shadowClass = props.shadow ? 'shadow-lg dark:shadow-gray-900/50' : '';
-  const borderClass = props.border ? 'border border-gray-200 dark:border-gray-700' : '';
+  const base = 'bg-white/80 dark:bg-gray-800 rounded-lg transition-colors backdrop-blur-sm';
+  const shadowClass = props.shadow ? 'shadow-md shadow-slate-200/50 dark:shadow-gray-900/50' : '';
+  const borderClass = props.border ? 'border border-slate-200/60 dark:border-gray-700' : '';
 
   const paddingClasses = {
     none: '',
