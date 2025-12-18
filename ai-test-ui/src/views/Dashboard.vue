@@ -201,47 +201,47 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50/30 to-violet-50/50 dark:bg-gray-900 transition-colors">
+  <div class="min-h-screen bg-[#f0f0f0] dark:bg-gray-900 transition-colors">
     <!-- Header -->
-    <header class="bg-gradient-to-r from-indigo-600 to-violet-600 dark:bg-gray-800 shadow-lg border-b border-indigo-500/20 dark:border-gray-700 transition-colors">
+    <header class="bg-[#ffffff] dark:bg-gray-800 shadow-sm border-b border-[#d3d3d3] dark:border-gray-700 transition-colors">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold text-white dark:text-white transition-colors">AI Test Automation</h1>
-            <p class="text-sm text-indigo-100 dark:text-gray-400 mt-1 transition-colors">Automated test case generation</p>
+            <h1 class="text-2xl font-bold text-[#1a1a40] dark:text-white transition-colors">AI Test Automation</h1>
+            <p class="text-sm text-[#a9a9a9] dark:text-gray-400 mt-1 transition-colors">Automated test case generation</p>
           </div>
           <div class="flex items-center gap-3">
             <span
               v-if="connectionStatus === 'connected'"
-              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-400/90 text-white backdrop-blur-sm"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
             >
-              <span class="w-2 h-2 bg-white rounded-full mr-1.5 animate-pulse" />
+              <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1.5 animate-pulse" />
               Connected
             </span>
             <span
               v-else-if="connectionStatus === 'error'"
-              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-400/90 text-white backdrop-blur-sm"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
             >
-              <span class="w-2 h-2 bg-white rounded-full mr-1.5" />
+              <span class="w-2 h-2 bg-red-500 rounded-full mr-1.5" />
               Error
             </span>
             <span
               v-else
-              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#d3d3d3] dark:bg-gray-700 text-[#a9a9a9] dark:text-gray-300"
             >
-              <span class="w-2 h-2 bg-white/60 rounded-full mr-1.5" />
+              <span class="w-2 h-2 bg-[#a9a9a9] dark:bg-gray-400 rounded-full mr-1.5" />
               Disconnected
             </span>
 
             <!-- Dark Mode Toggle -->
             <button
               @click="toggleDarkMode"
-              class="p-2 rounded-lg bg-white/20 dark:bg-gray-700 hover:bg-white/30 dark:hover:bg-gray-600 transition-colors backdrop-blur-sm"
+              class="p-2 rounded-lg bg-[#f0f0f0] dark:bg-gray-700 hover:bg-[#d3d3d3] dark:hover:bg-gray-600 transition-colors"
               :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
             >
               <svg
                 v-if="isDark"
-                class="w-5 h-5 text-yellow-300"
+                class="w-5 h-5 text-yellow-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -255,7 +255,7 @@ onUnmounted(() => {
               </svg>
               <svg
                 v-else
-                class="w-5 h-5 text-white"
+                class="w-5 h-5 text-[#1a1a40]"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
