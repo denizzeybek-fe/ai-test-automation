@@ -43,7 +43,7 @@ export const useTaskStore = defineStore('task', () => {
   const updateTask = (taskId: string, updates: Partial<TaskInfo>) => {
     const index = tasks.value.findIndex(t => t.id === taskId);
     if (index !== -1) {
-      tasks.value[index] = { ...tasks.value[index], ...updates };
+      tasks.value[index] = { ...tasks.value[index], ...updates } as TaskInfo;
       saveToLocalStorage();
     }
   };

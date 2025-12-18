@@ -37,11 +37,13 @@ const formatTimestamp = () => {
 </script>
 
 <template>
-  <Card padding="none">
+  <Card>
     <div class="h-[400px] flex flex-col">
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Execution Logs</h3>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Execution Logs
+        </h3>
         <Button
           v-if="logs.length > 0"
           variant="secondary"
@@ -75,8 +77,12 @@ const formatTimestamp = () => {
                 d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <p class="text-sm">No execution running</p>
-            <p class="text-xs mt-1">Logs will appear here when tasks are executed</p>
+            <p class="text-sm">
+              No execution running
+            </p>
+            <p class="text-xs mt-1">
+              Logs will appear here when tasks are executed
+            </p>
           </div>
         </div>
 
@@ -85,11 +91,17 @@ const formatTimestamp = () => {
           v-if="logs.length === 0 && isExecuting"
           class="h-full flex items-center justify-center"
         >
-          <Spinner size="lg" label="Initializing..." />
+          <Spinner
+            size="lg"
+            label="Initializing..."
+          />
         </div>
 
         <!-- Log Lines -->
-        <div v-if="logs.length > 0" class="space-y-1">
+        <div
+          v-if="logs.length > 0"
+          class="space-y-1"
+        >
           <div
             v-for="(log, index) in logs"
             :key="index"
@@ -111,11 +123,17 @@ const formatTimestamp = () => {
       <!-- Footer with Status -->
       <div class="px-4 py-2 bg-slate-100/50 dark:bg-gray-800 border-t border-slate-200/60 dark:border-gray-700 flex items-center justify-between">
         <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-gray-400">
-          <span v-if="isExecuting" class="flex items-center gap-1">
+          <span
+            v-if="isExecuting"
+            class="flex items-center gap-1"
+          >
             <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
             Executing...
           </span>
-          <span v-else class="flex items-center gap-1">
+          <span
+            v-else
+            class="flex items-center gap-1"
+          >
             <span class="w-2 h-2 bg-gray-400 dark:bg-gray-600 rounded-full" />
             Idle
           </span>

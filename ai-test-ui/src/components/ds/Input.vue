@@ -40,9 +40,15 @@ const handleInput = (event: Event) => {
 
 <template>
   <div class="w-full">
-    <label v-if="label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 transition-colors">
+    <label
+      v-if="label"
+      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 transition-colors"
+    >
       {{ label }}
-      <span v-if="required" class="text-red-500">*</span>
+      <span
+        v-if="required"
+        class="text-red-500"
+      >*</span>
     </label>
     <input
       :type="type"
@@ -52,8 +58,11 @@ const handleInput = (event: Event) => {
       :required="required"
       :class="inputClasses"
       @input="handleInput"
-    />
-    <p v-if="error" class="mt-1 text-sm text-red-600">
+    >
+    <p
+      v-if="error"
+      class="mt-1 text-sm text-red-600"
+    >
       {{ error }}
     </p>
   </div>

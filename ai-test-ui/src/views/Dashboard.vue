@@ -4,7 +4,7 @@ import { useTaskStore } from '@/stores/taskStore';
 import { useSocketStore } from '@/stores/socketStore';
 import { useDarkMode } from '@/composables/useDarkMode';
 import { Toast } from '@/components/ds';
-import { AnalyticsType } from '@/types';
+import { AnalyticsType, TaskStatus } from '@/types';
 import TaskInput from './_components/TaskInput.vue';
 import StatsCards from './_components/StatsCards.vue';
 import TaskList from './_components/TaskList.vue';
@@ -135,7 +135,7 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
     const existingTask = taskStore.tasks.find(t => t.id === taskId);
     if (existingTask) {
       taskStore.updateTask(taskId, {
-        status: 'success',
+        status: TaskStatus.Success,
         testCasesCreated: testCasesCount,
         timestamp: Date.now(),
       });
@@ -143,7 +143,7 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
       taskStore.addTask({
         id: taskId,
         title: currentTaskTitle.value || `Test cases for ${taskId}`,
-        status: 'success',
+        status: TaskStatus.Success,
         analyticsType: (currentAnalyticsType.value as AnalyticsType) || AnalyticsType.Overall,
         testCasesCreated: testCasesCount,
         timestamp: Date.now(),
@@ -164,7 +164,7 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
     const existingTask = taskStore.tasks.find(t => t.id === taskId);
     if (existingTask) {
       taskStore.updateTask(taskId, {
-        status: 'failed',
+        status: TaskStatus.Failed,
         error: message,
         timestamp: Date.now(),
       });
@@ -172,7 +172,7 @@ const handleSubmitResponse = async (taskId: string, response: string) => {
       taskStore.addTask({
         id: taskId,
         title: currentTaskTitle.value || `Test cases for ${taskId}`,
-        status: 'failed',
+        status: TaskStatus.Failed,
         analyticsType: (currentAnalyticsType.value as AnalyticsType) || AnalyticsType.Overall,
         error: message,
         timestamp: Date.now(),
@@ -207,8 +207,12 @@ onUnmounted(() => {
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold text-[#1a1a40] dark:text-white transition-colors">AI Test Automation</h1>
-            <p class="text-sm text-[#a9a9a9] dark:text-gray-400 mt-1 transition-colors">Automated test case generation</p>
+            <h1 class="text-2xl font-bold text-[#1a1a40] dark:text-white transition-colors">
+              AI Test Automation
+            </h1>
+            <p class="text-sm text-[#a9a9a9] dark:text-gray-400 mt-1 transition-colors">
+              Automated test case generation
+            </p>
           </div>
           <div class="flex items-center gap-3">
             <span
@@ -235,9 +239,9 @@ onUnmounted(() => {
 
             <!-- Dark Mode Toggle -->
             <button
-              @click="toggleDarkMode"
               class="p-2 rounded-lg bg-[#f0f0f0] dark:bg-gray-700 hover:bg-[#d3d3d3] dark:hover:bg-gray-600 transition-colors"
               :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+              @click="toggleDarkMode"
             >
               <svg
                 v-if="isDark"

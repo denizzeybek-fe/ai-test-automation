@@ -1,19 +1,23 @@
-export enum TaskStatus {
-  Success = 'success',
-  Failed = 'failed',
-  Pending = 'pending',
-  InProgress = 'in-progress',
-}
+export type TaskStatus = 'success' | 'failed' | 'pending' | 'in-progress';
 
-export enum AnalyticsType {
-  Overall = 'overall',
-  Homepage = 'homepage',
-  Onsite = 'onsite',
-  Usage = 'usage',
-  EventConversion = 'event-conversion',
-  EnigmaSentinel = 'enigma-sentinel',
-  Other = 'other',
-}
+export const TaskStatus = {
+  Success: 'success' as const,
+  Failed: 'failed' as const,
+  Pending: 'pending' as const,
+  InProgress: 'in-progress' as const,
+};
+
+export type AnalyticsType = 'overall' | 'homepage' | 'onsite' | 'usage' | 'event-conversion' | 'enigma-sentinel' | 'other';
+
+export const AnalyticsType = {
+  Overall: 'overall' as const,
+  Homepage: 'homepage' as const,
+  Onsite: 'onsite' as const,
+  Usage: 'usage' as const,
+  EventConversion: 'event-conversion' as const,
+  EnigmaSentinel: 'enigma-sentinel' as const,
+  Other: 'other' as const,
+};
 
 export interface TaskInfo {
   id: string;
@@ -39,17 +43,19 @@ export interface ExecutionLog {
 }
 
 // WebSocket Events
-export enum WebSocketEvent {
+export type WebSocketEvent = 'run-tasks' | 'cancel' | 'progress' | 'step' | 'completed' | 'error';
+
+export const WebSocketEvent = {
   // Client -> Server
-  RunTasks = 'run-tasks',
-  Cancel = 'cancel',
+  RunTasks: 'run-tasks' as const,
+  Cancel: 'cancel' as const,
 
   // Server -> Client
-  Progress = 'progress',
-  Step = 'step',
-  Completed = 'completed',
-  Error = 'error',
-}
+  Progress: 'progress' as const,
+  Step: 'step' as const,
+  Completed: 'completed' as const,
+  Error: 'error' as const,
+};
 
 export interface RunTasksPayload {
   taskIds: string[];
