@@ -80,7 +80,7 @@ const copyPrompt = () => {
 
 <template>
   <Card title="Generate Test Cases">
-    <div class="space-y-4">
+    <div class="space-y-4 min-h-[280px]">
       <!-- Step 1: Task ID Input -->
       <div class="space-y-3">
         <div class="flex items-center gap-2">
