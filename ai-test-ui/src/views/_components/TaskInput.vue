@@ -247,7 +247,7 @@ const copyPrompt = async () => {
         v-if="!generatedPrompt"
         class="text-sm text-gray-500 dark:text-gray-400"
       >
-        <p>Enter a single task ID (e.g., PA-12345) to generate a prompt for test case creation.</p>
+        <p>Enter one or more task IDs (e.g., PA-12345 or PA-123, PA-456) to generate AI prompts for automated test case creation.</p>
       </div>
     </div>
   </Card>

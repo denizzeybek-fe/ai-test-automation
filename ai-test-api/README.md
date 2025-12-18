@@ -1,4 +1,6 @@
-# AI Test Automation
+# AI Test Automation - API & CLI
+
+> **💡 Note**: This README covers the API and CLI usage. For the **Web UI (recommended for most users)**, see the [main README](../README.md).
 
 Automated test case generation system that integrates **Jira**, **BrowserStack Test Management**, and **Claude AI** to automatically create and organize test cases for sprint tasks.
 
@@ -14,6 +16,18 @@ This tool automates the entire test case creation workflow:
 6. Links test cases to existing test runs
 
 **Everything is automated except one step**: You paste the generated prompt to Claude Desktop and save the response.
+
+## Usage Modes
+
+This system offers two interfaces:
+
+1. **🎨 Web UI** (Recommended): User-friendly interface with real-time monitoring
+   - Start with: `npm run dev:api` (API) + `npm run dev` (UI in `../ai-test-ui`)
+   - See [main README](../README.md) for details
+
+2. **⌨️ CLI** (This document): Command-line interface for automation and scripting
+   - Ideal for CI/CD pipelines and batch operations
+   - Read below for CLI usage
 
 ---
 
