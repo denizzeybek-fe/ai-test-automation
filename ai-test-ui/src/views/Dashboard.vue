@@ -101,7 +101,7 @@ onUnmounted(() => {
         <!-- Right Column: Monitoring (1/3 width) -->
         <div class="space-y-6">
           <!-- Stats Cards -->
-          <StatsCards />
+          <!-- <StatsCards /> -->
 
           <!-- Execution Viewer -->
           <ExecutionViewer
