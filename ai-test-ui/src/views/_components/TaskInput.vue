@@ -92,7 +92,7 @@ const copyPrompt = () => {
           v-model="taskInput"
           type="text"
           label="Task ID"
-          placeholder="PA-12345"
+          placeholder="PA-12345 or PA-123, PA-456, PA-789"
           :disabled="isGenerating || !!generatedPrompt"
           :error="error"
           required
