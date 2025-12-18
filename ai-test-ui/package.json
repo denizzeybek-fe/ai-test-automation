@@ -10,7 +10,7 @@
     "gcl": "openapi --input http://localhost:3000/api-docs-json --output ./src/client --client axios",
     "lint": "eslint . --ext .ts,.vue",
     "lint:fix": "eslint . --ext .ts,.vue --fix",
-    "type-check": "vue-tsc --noEmit",
+    "type-check": "vue-tsc --noEmit -p tsconfig.app.json",
     "check": "npm run type-check && npm run lint"
   },
   "dependencies": {

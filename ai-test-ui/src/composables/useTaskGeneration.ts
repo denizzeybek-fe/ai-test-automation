@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { AnalyticsType, TaskStatus } from '@/types';
 import { PromptsService } from '@/client';
+import { useToast } from './useToast';
 import '@/client/config';
 
 interface TaskAnalyticsInfo {
@@ -15,6 +16,7 @@ interface TaskAnalyticsInfo {
 
 export function useTaskGeneration() {
   const taskStore = useTaskStore();
+  const { showSuccess, showError } = useToast();
 
   // Two-step flow state
   const isGenerating = ref(false);
@@ -45,18 +47,15 @@ export function useTaskGeneration() {
 
       taskStore.addLog(`📥 Fetching ${taskIds.length} task(s) from Jira: ${taskIds.join(', ')}`, 'info');
 
-      const prompts: string[] = [];
       const taskInfos: TaskAnalyticsInfo[] = [];
       let combinedTitle = '';
       let combinedAnalyticsType = '';
 
-      // Fetch each task and generate prompt
+      // First, fetch each task to get analytics type info
       for (const taskId of taskIds) {
         const data = await PromptsService.postApiPromptsGenerate({
           taskId: taskId.trim(),
         });
-
-        prompts.push(`# ${taskId}: ${data.taskTitle || ''}\n\n${data.prompt || ''}`);
 
         // Store analytics info for each task
         const hasMatch = data.hasKeywordMatch ?? false;
@@ -79,20 +78,57 @@ export function useTaskGeneration() {
 
       taskAnalyticsInfos.value = taskInfos;
 
-      // Combine all prompts
-      generatedPrompt.value = prompts.join('\n\n---\n\n');
+      // Generate batch prompt if multiple tasks, otherwise use single prompt
+      if (taskIds.length > 1) {
+        // Use batch prompt generation endpoint
+        taskStore.addLog(`📝 Generating batch prompt for ${taskIds.length} tasks...`, 'info');
+
+        const batchTasks = taskInfos.map(info => ({
+          taskId: info.taskId,
+          analyticsType: info.selectedType,
+        }));
+
+        const batchResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/prompts/generate/batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasks: batchTasks }),
+        });
+
+        if (!batchResponse.ok) {
+          const errorData = await batchResponse.json().catch(() => ({
+            error: 'Failed to generate batch prompt'
+          }));
+          throw new Error(errorData.error || 'Failed to generate batch prompt');
+        }
+
+        const batchData = await batchResponse.json();
+        generatedPrompt.value = batchData.prompt;
+      } else {
+        // Single task: use existing single prompt
+        const data = await PromptsService.postApiPromptsGenerate({
+          taskId: taskIds[0]!.trim(), // Non-null assertion: length check above guarantees this exists
+        });
+        generatedPrompt.value = data.prompt || '';
+      }
+
       currentTaskTitle.value = taskIds.length > 1
         ? `Multiple Tasks (${taskIds.length})`
-        : combinedTitle || `Task ${taskIds[0]}`;
+        : combinedTitle || `Task ${taskIds[0]!}`; // Non-null assertion: length check above guarantees this exists
       currentAnalyticsType.value = combinedAnalyticsType || AnalyticsType.Overall;
 
       taskStore.addLog(`✅ Generated prompts for ${taskIds.length} task(s) successfully!`, 'success');
       taskStore.addLog(`📋 Analytics Type: ${currentAnalyticsType.value}`, 'info');
       taskStore.addLog(`📋 Copy the combined prompt above and paste it into Claude Desktop`, 'info');
-    } catch (error) {
+
+      // Show success toast
+      showSuccess(`Successfully generated prompt for ${taskIds.length} task${taskIds.length > 1 ? 's' : ''}`);
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       taskStore.addLog(`❌ Error: ${message}`, 'error');
       generatedPrompt.value = null;
+
+      // Show error toast - backend already provides user-friendly message
+      showError(message);
     } finally {
       isGenerating.value = false;
     }
@@ -101,8 +137,7 @@ export function useTaskGeneration() {
   // Step 2: Submit Claude's response and create test cases
   const handleSubmitResponse = async (
     _taskId: string,
-    response: string,
-    showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void
+    response: string
   ) => {
     isSubmitting.value = true;
     try {
@@ -115,95 +150,121 @@ export function useTaskGeneration() {
 
       taskStore.addLog(`📤 Submitting response for ${activeTasks.length} task(s)...`, 'info');
 
-      // For now, we'll process the first non-skipped task
-      // TODO: Update backend to support multiple task submissions
-      const firstTask = activeTasks[0];
+      // Process each non-skipped task
+      let totalCreated = 0;
+      let totalFailed = 0;
+      const results: Array<{ taskId: string; success: boolean; error?: string }> = [];
 
-      if (!firstTask) {
-        throw new Error('No active task found.');
-      }
+      for (let i = 0; i < activeTasks.length; i++) {
+        const task = activeTasks[i]!; // Non-null assertion: loop guarantee
+        taskStore.addLog(`[${i + 1}/${activeTasks.length}] Processing ${task.taskId}...`, 'info');
 
-      const data = await PromptsService.postApiPromptsResponse({
-        taskId: firstTask.taskId,
-        response,
-        taskTitle: firstTask.title,
-        analyticsType: firstTask.selectedType,
-      });
-      const testCasesCount = data.testCases?.length || 0;
-      const browserStack = data.browserStack;
+        try {
+          const data = await PromptsService.postApiPromptsResponse({
+            taskId: task.taskId,
+            response,
+            taskTitle: task.title,
+            analyticsType: task.selectedType,
+          });
 
-      taskStore.addLog(`✅ Response processed successfully!`, 'success');
-      taskStore.addLog(`📊 Test cases parsed: ${testCasesCount}`, 'success');
+          const testCasesCount = data.testCases?.length || 0;
+          const browserStack = data.browserStack;
 
-      if (browserStack) {
-        taskStore.addLog(`📁 BrowserStack folder: ${browserStack.folderName}`, 'info');
-        taskStore.addLog(`✅ Created in BrowserStack: ${browserStack.createdCount}/${testCasesCount}`, 'success');
+          taskStore.addLog(`  ✅ ${task.taskId}: ${testCasesCount} test cases parsed`, 'success');
 
-        if (browserStack.failedCount > 0) {
-          taskStore.addLog(`⚠️  Failed to create: ${browserStack.failedCount} test case(s)`, 'warning');
+          if (browserStack) {
+            taskStore.addLog(`  📁 Folder: ${browserStack.folderName}`, 'info');
+            taskStore.addLog(`  ✅ Created: ${browserStack.createdCount}/${testCasesCount}`, 'success');
+
+            if (browserStack.failedCount > 0) {
+              taskStore.addLog(`  ⚠️  Failed: ${browserStack.failedCount} test case(s)`, 'warning');
+            }
+
+            totalCreated += browserStack.createdCount;
+            totalFailed += browserStack.failedCount;
+          }
+
+          // Add or update task in store
+          const existingTask = taskStore.tasks.find(t => t.id === task.taskId);
+          if (existingTask) {
+            taskStore.updateTask(task.taskId, {
+              status: TaskStatus.Success,
+              testCasesCreated: testCasesCount,
+              timestamp: Date.now(),
+            });
+          } else {
+            taskStore.addTask({
+              id: task.taskId,
+              title: task.title || `Test cases for ${task.taskId}`,
+              status: TaskStatus.Success,
+              analyticsType: (task.selectedType as AnalyticsType) || AnalyticsType.Overall,
+              testCasesCreated: testCasesCount,
+              timestamp: Date.now(),
+            });
+          }
+
+          results.push({ taskId: task.taskId, success: true });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          taskStore.addLog(`  ❌ ${task.taskId}: ${errorMessage}`, 'error');
+
+          // Add or update task with failed status
+          const existingTask = taskStore.tasks.find(t => t.id === task.taskId);
+          if (existingTask) {
+            taskStore.updateTask(task.taskId, {
+              status: TaskStatus.Failed,
+              error: errorMessage,
+              timestamp: Date.now(),
+            });
+          } else {
+            taskStore.addTask({
+              id: task.taskId,
+              title: task.title || `Test cases for ${task.taskId}`,
+              status: TaskStatus.Failed,
+              analyticsType: (task.selectedType as AnalyticsType) || AnalyticsType.Overall,
+              error: errorMessage,
+              timestamp: Date.now(),
+            });
+          }
+
+          results.push({ taskId: task.taskId, success: false, error: errorMessage });
         }
-
-        // Show success notification
-        if (browserStack.createdCount > 0) {
-          showToast(
-            `Successfully created ${browserStack.createdCount} test case${browserStack.createdCount > 1 ? 's' : ''} in BrowserStack`,
-            'success'
-          );
-        }
       }
 
-      // Add or update task in store
-      const existingTask = taskStore.tasks.find(t => t.id === firstTask.taskId);
-      if (existingTask) {
-        taskStore.updateTask(firstTask.taskId, {
-          status: TaskStatus.Success,
-          testCasesCreated: testCasesCount,
-          timestamp: Date.now(),
-        });
-      } else {
-        taskStore.addTask({
-          id: firstTask.taskId,
-          title: firstTask.title || `Test cases for ${firstTask.taskId}`,
-          status: TaskStatus.Success,
-          analyticsType: (firstTask.selectedType as AnalyticsType) || AnalyticsType.Overall,
-          testCasesCreated: testCasesCount,
-          timestamp: Date.now(),
-        });
+      // Summary
+      const successCount = results.filter(r => r.success).length;
+      const failedCount = results.filter(r => !r.success).length;
+
+      taskStore.addLog('', 'info'); // Empty line
+      taskStore.addLog(`🎉 Batch Processing Complete!`, 'success');
+      taskStore.addLog(`✅ Successful: ${successCount}/${activeTasks.length}`, 'success');
+      if (failedCount > 0) {
+        taskStore.addLog(`❌ Failed: ${failedCount}/${activeTasks.length}`, 'error');
+      }
+      taskStore.addLog(`📊 Total test cases created: ${totalCreated}`, 'success');
+      if (totalFailed > 0) {
+        taskStore.addLog(`⚠️  Total test cases failed: ${totalFailed}`, 'warning');
       }
 
-      // Clear state for next task
+      // Show notification
+      if (successCount > 0) {
+        showSuccess(
+          `Successfully processed ${successCount} task${successCount > 1 ? 's' : ''} with ${totalCreated} test case${totalCreated !== 1 ? 's' : ''}`
+        );
+      }
+      if (failedCount > 0) {
+        showError(
+          `${failedCount} task${failedCount > 1 ? 's' : ''} failed to process`
+        );
+      }
+
+      // Clear state for next batch
       generatedPrompt.value = null;
       currentTaskId.value = null;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      taskStore.addLog(`❌ Error: ${message}`, 'error');
-
-      // Show error notification
-      showToast(`Failed to create test cases: ${message}`, 'error');
-
-      // Add or update task with failed status
-      const activeTasks = taskAnalyticsInfos.value.filter(t => !t.skipped);
-
-      if (activeTasks.length > 0) {
-        const firstTask = activeTasks[0]!; // Non-null assertion: length check guarantees element exists
-        const existingTask = taskStore.tasks.find(t => t.id === firstTask.taskId);
-        if (existingTask) {
-          taskStore.updateTask(firstTask.taskId, {
-            status: TaskStatus.Failed,
-            error: message,
-            timestamp: Date.now(),
-          });
-        } else {
-          taskStore.addTask({
-            id: firstTask.taskId,
-            title: firstTask.title || `Test cases for ${firstTask.taskId}`,
-            status: TaskStatus.Failed,
-            analyticsType: (firstTask.selectedType as AnalyticsType) || AnalyticsType.Overall,
-            error: message,
-            timestamp: Date.now(),
-          });
-        }
-      }
+      taskStore.addLog(`❌ Fatal Error: ${message}`, 'error');
+      showError(`Failed to process tasks: ${message}`);
     } finally {
       isSubmitting.value = false;
     }

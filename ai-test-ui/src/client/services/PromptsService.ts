@@ -10,6 +10,30 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class PromptsService {
     /**
+     * Generate batch AI prompt for multiple tasks
+     * @param requestBody
+     * @returns any Batch prompt generated successfully
+     * @throws ApiError
+     */
+    public static postApiPromptsGenerateBatch(
+        requestBody: {
+            tasks: Array<{
+                taskId: string;
+                analyticsType: string;
+            }>;
+        },
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/prompts/generate/batch',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid request`,
+            },
+        });
+    }
+    /**
      * Generate AI prompt for a task
      * @param requestBody
      * @returns PromptResponse Prompt generated successfully

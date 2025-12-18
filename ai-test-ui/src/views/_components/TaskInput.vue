@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Card, Input, Button } from '@/components/ds';
 import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
 
@@ -37,6 +37,17 @@ const error = ref('');
 // Step 2: Response Input
 const responseInput = ref('');
 const responseError = ref('');
+
+// Watch for external clear trigger (when taskAnalyticsInfos is emptied after successful submit)
+watch(() => props.taskAnalyticsInfos.length, (newLength, oldLength) => {
+  // If we had tasks and now we don't (cleared after successful submit), clear inputs
+  if (oldLength > 0 && newLength === 0) {
+    taskInput.value = '';
+    responseInput.value = '';
+    error.value = '';
+    responseError.value = '';
+  }
+});
 
 const isValidTaskId = computed(() => {
   if (!taskInput.value.trim()) return false;

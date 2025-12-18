@@ -72,3 +72,6 @@ export interface RuleConfig {
   defaultType: AnalyticsType;
   ruleFiles: Record<AnalyticsType, string>;
 }
+
+// Error codes
+export * from './error-codes.js';
