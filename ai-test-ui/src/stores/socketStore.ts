@@ -5,12 +5,12 @@ import { useTaskStore } from './taskStore';
 import {
   WebSocketEvent,
   TaskStatus,
+  AnalyticsType,
   type RunTasksPayload,
   type StepPayload,
   type CompletedPayload,
   type ErrorPayload,
   type TaskInfo,
-  type AnalyticsType,
 } from '@/types';
 
 export const useSocketStore = defineStore('socket', () => {
@@ -148,7 +148,7 @@ export const useSocketStore = defineStore('socket', () => {
         id: data.taskId,
         title: data.message,
         status: data.status,
-        analyticsType: 'overall' as AnalyticsType,
+        analyticsType: AnalyticsType.Overall,
         timestamp: Date.now(),
       };
       taskStore.addTask(newTask);

@@ -104,4 +104,23 @@ export class RuleResolver {
   getPatterns(type: AnalyticsType): RegExp[] {
     return this.patterns.get(type) || [];
   }
+
+  /**
+   * Check if any keyword matches in the title
+   * @param title - Task title to analyze
+   * @returns True if any keyword matched
+   */
+  hasKeywordMatch(title: string): boolean {
+    for (const type of this.config.priorityOrder) {
+      const patterns = this.patterns.get(type);
+      if (!patterns) continue;
+
+      for (const pattern of patterns) {
+        if (pattern.test(title)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }

@@ -1,11 +1,23 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Card, Input, Button } from '@/components/ds';
+import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
+
+interface TaskAnalyticsInfo {
+  taskId: string;
+  title: string;
+  detectedType: string;
+  hasKeywordMatch: boolean;
+  selectedType: string;
+  skipped: boolean;
+}
 
 interface Props {
   isGenerating: boolean;
   isSubmitting: boolean;
   generatedPrompt: string | null;
+  taskAnalyticsInfos: TaskAnalyticsInfo[];
+  availableTypes: string[];
 }
 
 const props = defineProps<Props>();
@@ -14,6 +26,8 @@ const emit = defineEmits<{
   generatePrompt: [taskId: string];
   submitResponse: [taskId: string, response: string];
   clear: [];
+  updateAnalyticsType: [taskId: string, type: string];
+  toggleSkip: [taskId: string];
 }>();
 
 // Step 1: Task ID Input
@@ -25,7 +39,13 @@ const responseInput = ref('');
 const responseError = ref('');
 
 const isValidTaskId = computed(() => {
-  return taskInput.value.trim().length > 0 && /^[A-Z]+-\d+$/.test(taskInput.value.trim());
+  if (!taskInput.value.trim()) return false;
+
+  // Support both single and multiple task IDs separated by comma or space
+  const taskIds = taskInput.value.trim().split(/[,\s]+/).filter(id => id.length > 0);
+
+  // Each task ID must match format: PA-12345
+  return taskIds.every(id => /^[A-Z]+-\d+$/.test(id));
 });
 
 const handleGeneratePrompt = () => {
@@ -37,7 +57,7 @@ const handleGeneratePrompt = () => {
   }
 
   if (!isValidTaskId.value) {
-    error.value = 'Invalid task ID format. Expected format: PA-12345';
+    error.value = 'Invalid task ID format. Expected format: PA-12345 or PA-123, PA-456';
     return;
   }
 
@@ -71,9 +91,15 @@ const handleClear = () => {
   emit('clear');
 };
 
-const copyPrompt = () => {
+const isCopied = ref(false);
+
+const copyPrompt = async () => {
   if (props.generatedPrompt) {
-    navigator.clipboard.writeText(props.generatedPrompt);
+    await navigator.clipboard.writeText(props.generatedPrompt);
+    isCopied.value = true;
+    setTimeout(() => {
+      isCopied.value = false;
+    }, 2000);
   }
 };
 </script>
@@ -138,7 +164,7 @@ const copyPrompt = () => {
                 class="absolute top-2 right-2"
                 @click="copyPrompt"
               >
-                Copy
+                {{ isCopied ? 'Copied!' : 'Copy' }}
               </Button>
             </div>
           </div>
@@ -170,6 +196,15 @@ const copyPrompt = () => {
             </div>
           </div>
         </div>
+
+        <!-- Analytics Type Selection -->
+        <AnalyticsTypeSelector
+          :task-analytics-infos="taskAnalyticsInfos"
+          :available-types="availableTypes"
+          :is-submitting="isSubmitting"
+          @update-analytics-type="(taskId, type) => emit('updateAnalyticsType', taskId, type)"
+          @toggle-skip="(taskId) => emit('toggleSkip', taskId)"
+        />
 
         <!-- Action Buttons -->
         <div class="flex items-center gap-3 mt-4">

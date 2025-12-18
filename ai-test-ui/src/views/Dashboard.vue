@@ -3,8 +3,9 @@ import { onMounted, onUnmounted, computed, ref } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { useSocketStore } from '@/stores/socketStore';
 import { useDarkMode } from '@/composables/useDarkMode';
+import { useTaskGeneration } from '@/composables/useTaskGeneration';
 import { Toast } from '@/components/ds';
-import { AnalyticsType, TaskStatus } from '@/types';
+import DashboardHeader from './_components/DashboardHeader.vue';
 import TaskInput from './_components/TaskInput.vue';
 import StatsCards from './_components/StatsCards.vue';
 import TaskList from './_components/TaskList.vue';
@@ -37,156 +38,23 @@ const removeToast = (id: number) => {
   toasts.value = toasts.value.filter(toast => toast.id !== id);
 };
 
-// Two-step flow state
-const isGenerating = ref(false);
-const isSubmitting = ref(false);
-const generatedPrompt = ref<string | null>(null);
-const currentTaskId = ref<string | null>(null);
-const currentTaskTitle = ref<string | null>(null);
-const currentAnalyticsType = ref<string | null>(null);
+// Use task generation composable
+const {
+  isGenerating,
+  isSubmitting,
+  generatedPrompt,
+  taskAnalyticsInfos,
+  availableTypes,
+  handleGeneratePrompt,
+  handleSubmitResponse: handleSubmitResponseBase,
+  handleClear,
+  handleUpdateAnalyticsType,
+  handleToggleSkip,
+} = useTaskGeneration();
 
-// Step 1: Generate prompt from Jira task
-const handleGeneratePrompt = async (taskId: string) => {
-  isGenerating.value = true;
-  generatedPrompt.value = null;
-  currentTaskId.value = taskId;
-  taskStore.clearLogs();
-
-  try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    taskStore.addLog(`📥 Fetching task ${taskId} from Jira...`, 'info');
-
-    const response = await fetch(`${apiUrl}/api/prompts/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to generate prompt');
-    }
-
-    const data = await response.json();
-    generatedPrompt.value = data.prompt;
-    currentTaskTitle.value = data.taskTitle || `Task ${taskId}`;
-    currentAnalyticsType.value = data.analyticsType || 'overall';
-
-    taskStore.addLog(`✅ Prompt generated successfully!`, 'success');
-    taskStore.addLog(`📋 Analytics Type: ${currentAnalyticsType.value}`, 'info');
-    taskStore.addLog(`📋 Copy the prompt above and paste it into Claude Desktop`, 'info');
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    taskStore.addLog(`❌ Error: ${message}`, 'error');
-    generatedPrompt.value = null;
-  } finally {
-    isGenerating.value = false;
-  }
-};
-
-// Step 2: Submit Claude's response and create test cases
-const handleSubmitResponse = async (taskId: string, response: string) => {
-  isSubmitting.value = true;
-  try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    taskStore.addLog(`📤 Submitting response for task ${taskId}...`, 'info');
-
-    const res = await fetch(`${apiUrl}/api/prompts/response`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        taskId,
-        response,
-        taskTitle: currentTaskTitle.value,
-        analyticsType: currentAnalyticsType.value,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || 'Failed to submit response');
-    }
-
-    const data = await res.json();
-    const testCasesCount = data.testCases?.length || 0;
-    const browserStack = data.browserStack;
-
-    taskStore.addLog(`✅ Response processed successfully!`, 'success');
-    taskStore.addLog(`📊 Test cases parsed: ${testCasesCount}`, 'success');
-
-    if (browserStack) {
-      taskStore.addLog(`📁 BrowserStack folder: ${browserStack.folderName}`, 'info');
-      taskStore.addLog(`✅ Created in BrowserStack: ${browserStack.createdCount}/${testCasesCount}`, 'success');
-
-      if (browserStack.failedCount > 0) {
-        taskStore.addLog(`⚠️  Failed to create: ${browserStack.failedCount} test case(s)`, 'warning');
-      }
-
-      // Show success notification
-      if (browserStack.createdCount > 0) {
-        showToast(
-          `Successfully created ${browserStack.createdCount} test case${browserStack.createdCount > 1 ? 's' : ''} in BrowserStack`,
-          'success'
-        );
-      }
-    }
-
-    // Add or update task in store
-    const existingTask = taskStore.tasks.find(t => t.id === taskId);
-    if (existingTask) {
-      taskStore.updateTask(taskId, {
-        status: TaskStatus.Success,
-        testCasesCreated: testCasesCount,
-        timestamp: Date.now(),
-      });
-    } else {
-      taskStore.addTask({
-        id: taskId,
-        title: currentTaskTitle.value || `Test cases for ${taskId}`,
-        status: TaskStatus.Success,
-        analyticsType: (currentAnalyticsType.value as AnalyticsType) || AnalyticsType.Overall,
-        testCasesCreated: testCasesCount,
-        timestamp: Date.now(),
-      });
-    }
-
-    // Clear state for next task
-    generatedPrompt.value = null;
-    currentTaskId.value = null;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    taskStore.addLog(`❌ Error: ${message}`, 'error');
-
-    // Show error notification
-    showToast(`Failed to create test cases: ${message}`, 'error');
-
-    // Add or update task with failed status
-    const existingTask = taskStore.tasks.find(t => t.id === taskId);
-    if (existingTask) {
-      taskStore.updateTask(taskId, {
-        status: TaskStatus.Failed,
-        error: message,
-        timestamp: Date.now(),
-      });
-    } else {
-      taskStore.addTask({
-        id: taskId,
-        title: currentTaskTitle.value || `Test cases for ${taskId}`,
-        status: TaskStatus.Failed,
-        analyticsType: (currentAnalyticsType.value as AnalyticsType) || AnalyticsType.Overall,
-        error: message,
-        timestamp: Date.now(),
-      });
-    }
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const handleClear = () => {
-  taskStore.clearLogs();
-  generatedPrompt.value = null;
-  currentTaskId.value = null;
+// Wrapper to inject showToast into handleSubmitResponse
+const handleSubmitResponse = (taskId: string, response: string) => {
+  return handleSubmitResponseBase(taskId, response, showToast);
 };
 
 // Initialize WebSocket connection on mount
@@ -203,79 +71,11 @@ onUnmounted(() => {
 <template>
   <div class="min-h-screen bg-[#f0f0f0] dark:bg-gray-900 transition-colors">
     <!-- Header -->
-    <header class="bg-[#ffffff] dark:bg-gray-800 shadow-sm border-b border-[#d3d3d3] dark:border-gray-700 transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-[#1a1a40] dark:text-white transition-colors">
-              AI Test Automation
-            </h1>
-            <p class="text-sm text-[#a9a9a9] dark:text-gray-400 mt-1 transition-colors">
-              Automated test case generation
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <span
-              v-if="connectionStatus === 'connected'"
-              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-            >
-              <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1.5 animate-pulse" />
-              Connected
-            </span>
-            <span
-              v-else-if="connectionStatus === 'error'"
-              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
-            >
-              <span class="w-2 h-2 bg-red-500 rounded-full mr-1.5" />
-              Error
-            </span>
-            <span
-              v-else
-              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#d3d3d3] dark:bg-gray-700 text-[#a9a9a9] dark:text-gray-300"
-            >
-              <span class="w-2 h-2 bg-[#a9a9a9] dark:bg-gray-400 rounded-full mr-1.5" />
-              Disconnected
-            </span>
-
-            <!-- Dark Mode Toggle -->
-            <button
-              class="p-2 rounded-lg bg-[#f0f0f0] dark:bg-gray-700 hover:bg-[#d3d3d3] dark:hover:bg-gray-600 transition-colors"
-              :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-              @click="toggleDarkMode"
-            >
-              <svg
-                v-if="isDark"
-                class="w-5 h-5 text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-              <svg
-                v-else
-                class="w-5 h-5 text-[#1a1a40]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
+    <DashboardHeader
+      :connection-status="connectionStatus"
+      :is-dark="isDark"
+      @toggle-dark-mode="toggleDarkMode"
+    />
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -288,9 +88,13 @@ onUnmounted(() => {
             :is-generating="isGenerating"
             :is-submitting="isSubmitting"
             :generated-prompt="generatedPrompt"
+            :task-analytics-infos="taskAnalyticsInfos"
+            :available-types="availableTypes"
             @generate-prompt="handleGeneratePrompt"
             @submit-response="handleSubmitResponse"
             @clear="handleClear"
+            @update-analytics-type="handleUpdateAnalyticsType"
+            @toggle-skip="handleToggleSkip"
           />
         </div>
 

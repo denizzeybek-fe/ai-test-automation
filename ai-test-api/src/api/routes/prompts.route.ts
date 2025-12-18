@@ -44,8 +44,18 @@ const browserStackService = new BrowserStackService(
  *       properties:
  *         taskId:
  *           type: string
+ *         taskTitle:
+ *           type: string
  *         prompt:
  *           type: string
+ *         analyticsType:
+ *           type: string
+ *         hasKeywordMatch:
+ *           type: boolean
+ *         availableTypes:
+ *           type: array
+ *           items:
+ *             type: string
  *         timestamp:
  *           type: number
  *     SaveResponseRequest:
@@ -59,6 +69,10 @@ const browserStackService = new BrowserStackService(
  *         response:
  *           type: string
  *           description: JSON string from Claude AI
+ *         taskTitle:
+ *           type: string
+ *         analyticsType:
+ *           type: string
  */
 
 /**
@@ -101,6 +115,8 @@ router.post('/generate', async (req, res) => {
 
     // 2. Resolve analytics type
     const analyticsType = ruleResolver.resolve(taskInfo.title);
+    const hasKeywordMatch = ruleResolver.hasKeywordMatch(taskInfo.title);
+    const availableTypes = ruleResolver.getTypes();
 
     // 3. Load rule file
     const ruleFilePath = ruleResolver.getRuleFilePath(analyticsType);
@@ -119,6 +135,8 @@ router.post('/generate', async (req, res) => {
       taskTitle: taskInfo.title,
       prompt,
       analyticsType,
+      hasKeywordMatch,
+      availableTypes,
       promptFile: `output/prompts/${promptFileName}`,
       timestamp: Date.now(),
     });

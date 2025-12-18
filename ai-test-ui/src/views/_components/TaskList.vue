@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { Card, Badge, Input } from '@/components/ds';
+import { TaskStatus } from '@/types';
 import type { TaskInfo } from '@/types';
 
 const taskStore = useTaskStore();
@@ -34,10 +35,10 @@ const formatDate = (timestamp: number) => {
 
 const getStatusVariant = (status: TaskInfo['status']) => {
   const map: Record<string, 'success' | 'failed' | 'pending' | 'progress'> = {
-    'success': 'success',
-    'failed': 'failed',
-    'pending': 'pending',
-    'in-progress': 'progress',
+    [TaskStatus.Success]: 'success',
+    [TaskStatus.Failed]: 'failed',
+    [TaskStatus.Pending]: 'pending',
+    [TaskStatus.InProgress]: 'progress',
   };
   return map[status] || 'info';
 };
