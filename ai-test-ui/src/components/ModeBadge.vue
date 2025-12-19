@@ -8,9 +8,9 @@
       </div>
       <button
         v-if="!isLoading"
-        @click="toggleMode"
         class="toggle-btn"
         :title="`Switch to ${mode === Mode.Automatic ? 'Manual' : 'Automatic'} Mode`"
+        @click="toggleMode"
       >
         {{ mode === Mode.Automatic ? '✋ Manual' : '🤖 Auto' }}
       </button>

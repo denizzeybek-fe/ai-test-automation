@@ -31,6 +31,7 @@ const {
   handleClear,
   handleUpdateAnalyticsType,
   handleToggleSkip,
+  handleConfirmAndGenerate,
 } = useTaskGeneration();
 
 // Wrapper to auto-clear on success
@@ -93,6 +94,7 @@ onUnmounted(() => {
             @clear="handleClear"
             @update-analytics-type="handleUpdateAnalyticsType"
             @toggle-skip="handleToggleSkip"
+            @confirm-and-generate="handleConfirmAndGenerate"
           />
         </div>
 

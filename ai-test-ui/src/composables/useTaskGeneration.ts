@@ -88,120 +88,11 @@ export function useTaskGeneration() {
 
       taskAnalyticsInfos.value = taskInfos;
 
-      // AUTOMATIC MODE: Complete end-to-end without user intervention
+      // AUTOMATIC MODE: Show analytics types and wait for confirmation
       if (modeStore.mode === Mode.Automatic) {
         taskStore.addLog(`✅ Task details fetched successfully`, 'success');
-        taskStore.addLog(`🤖 Calling Claude CLI to generate test cases...`, 'info');
-        taskStore.addLog(`⏳ This may take a few minutes depending on task complexity...`, 'info');
-
-        const batchTasks = taskInfos.map(info => ({
-          taskId: info.taskId,
-          analyticsType: info.selectedType,
-        }));
-
-        // Call backend automatic endpoint
-        const automaticResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/prompts/automatic`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tasks: batchTasks }),
-        });
-
-        if (!automaticResponse.ok) {
-          const errorData = await automaticResponse.json().catch(() => ({
-            error: 'Failed to process tasks automatically'
-          }));
-          throw new Error(errorData.error || 'Failed to process tasks automatically');
-        }
-
-        const automaticData = await automaticResponse.json();
-
-        // Process results
-        let totalCreated = 0;
-        let successCount = 0;
-        let failedCount = 0;
-
-        taskStore.addLog(`📤 Processing ${taskInfos.length} task(s)...`, 'info');
-
-        for (const task of taskInfos) {
-          const result = automaticData.results?.find((r: { taskId: string }) => r.taskId === task.taskId);
-
-          if (result?.success) {
-            const testCasesCount = result.testCasesCreated || 0;
-            taskStore.addLog(`  ✅ ${task.taskId}: ${testCasesCount} test cases created`, 'success');
-            totalCreated += testCasesCount;
-            successCount++;
-
-            // Add or update task in store
-            const existingTask = taskStore.tasks.find(t => t.id === task.taskId);
-            if (existingTask) {
-              taskStore.updateTask(task.taskId, {
-                status: TaskStatus.Success,
-                testCasesCreated: testCasesCount,
-                timestamp: Date.now(),
-              });
-            } else {
-              taskStore.addTask({
-                id: task.taskId,
-                title: task.title || `Test cases for ${task.taskId}`,
-                status: TaskStatus.Success,
-                analyticsType: (task.selectedType as AnalyticsType) || AnalyticsType.Overall,
-                testCasesCreated: testCasesCount,
-                timestamp: Date.now(),
-              });
-            }
-          } else {
-            const errorMessage = result?.error || 'Unknown error';
-            taskStore.addLog(`  ❌ ${task.taskId}: ${errorMessage}`, 'error');
-            failedCount++;
-
-            // Add or update task with failed status
-            const existingTask = taskStore.tasks.find(t => t.id === task.taskId);
-            if (existingTask) {
-              taskStore.updateTask(task.taskId, {
-                status: TaskStatus.Failed,
-                error: errorMessage,
-                timestamp: Date.now(),
-              });
-            } else {
-              taskStore.addTask({
-                id: task.taskId,
-                title: task.title || `Test cases for ${task.taskId}`,
-                status: TaskStatus.Failed,
-                analyticsType: (task.selectedType as AnalyticsType) || AnalyticsType.Overall,
-                error: errorMessage,
-                timestamp: Date.now(),
-              });
-            }
-          }
-        }
-
-        // Summary
-        taskStore.addLog('', 'info'); // Empty line
-        taskStore.addLog(`🎉 Automatic Processing Complete!`, 'success');
-        taskStore.addLog(`✅ Successful: ${successCount}/${taskInfos.length}`, 'success');
-        if (failedCount > 0) {
-          taskStore.addLog(`❌ Failed: ${failedCount}/${taskInfos.length}`, 'error');
-        }
-        taskStore.addLog(`📊 Total test cases created: ${totalCreated}`, 'success');
-
-        // Show notification
-        if (successCount > 0) {
-          showSuccess(
-            `Successfully processed ${successCount} task${successCount > 1 ? 's' : ''} with ${totalCreated} test case${totalCreated !== 1 ? 's' : ''}`
-          );
-        }
-        if (failedCount > 0) {
-          showError(
-            `${failedCount} task${failedCount > 1 ? 's' : ''} failed to process`
-          );
-        }
-
-        // Clear state for next batch
-        taskAnalyticsInfos.value = [];
-        availableTypes.value = [];
-        currentTaskId.value = null;
-
-        return; // Exit early - automatic mode complete
+        taskStore.addLog(`👀 Please review analytics types below and click "Confirm & Generate"`, 'info');
+        return; // Wait for user to confirm analytics types
       }
 
       // MANUAL MODE: Generate and show prompt for user to copy
@@ -421,6 +312,168 @@ export function useTaskGeneration() {
     }
   };
 
+  // Automatic mode: Confirm analytics types and generate test cases
+  const handleConfirmAndGenerate = async () => {
+    if (modeStore.mode !== Mode.Automatic || taskAnalyticsInfos.value.length === 0) {
+      return;
+    }
+
+    isSubmitting.value = true;
+
+    try {
+      const activeTasks = taskAnalyticsInfos.value.filter(t => !t.skipped);
+
+      if (activeTasks.length === 0) {
+        throw new Error('All tasks are skipped. Please include at least one task.');
+      }
+
+      // Detailed logging like backend
+      taskStore.addLog(``, 'info'); // Empty line
+      taskStore.addLog(`🚀 Processing ${activeTasks.length} Task${activeTasks.length > 1 ? 's' : ''}`, 'info');
+      taskStore.addLog(``, 'info');
+      taskStore.addLog(`📝 Phase 1: Generating Prompts for All Tasks`, 'info');
+      taskStore.addLog(``, 'info');
+
+      // Log each task being processed
+      for (let i = 0; i < activeTasks.length; i++) {
+        const task = activeTasks[i]!;
+        taskStore.addLog(`[${i + 1}/${activeTasks.length}] Processing ${task.taskId}...`, 'info');
+        taskStore.addLog(``, 'info');
+        taskStore.addLog(`  ✅ Fetched: ${task.title}`, 'success');
+        taskStore.addLog(`  ✅ Type: ${task.selectedType}`, 'success');
+      }
+
+      taskStore.addLog(``, 'info');
+      taskStore.addLog(`📝 Generating Single Batch Prompt`, 'info');
+      taskStore.addLog(``, 'info');
+      taskStore.addLog(`🤖 Automatic mode enabled - Calling Claude CLI...`, 'info');
+      taskStore.addLog(``, 'info');
+
+      const batchTasks = activeTasks.map(info => ({
+        taskId: info.taskId,
+        analyticsType: info.selectedType,
+      }));
+
+      // Call backend automatic endpoint
+      const automaticResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/prompts/automatic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: batchTasks }),
+      });
+
+      if (!automaticResponse.ok) {
+        const errorData = await automaticResponse.json().catch(() => ({
+          error: 'Failed to process tasks automatically'
+        }));
+        throw new Error(errorData.error || 'Failed to process tasks automatically');
+      }
+
+      const automaticData = await automaticResponse.json();
+
+      // Process results
+      let totalCreated = 0;
+      let successCount = 0;
+      let failedCount = 0;
+
+      taskStore.addLog(`✅ Received response from Claude CLI for ${activeTasks.length} tasks`, 'success');
+      taskStore.addLog(``, 'info');
+      taskStore.addLog(``, 'info');
+      taskStore.addLog(`📦 Phase 2: Creating Test Cases in BrowserStack`, 'info');
+      taskStore.addLog(``, 'info');
+
+      for (let i = 0; i < activeTasks.length; i++) {
+        const task = activeTasks[i]!;
+        const result = automaticData.results?.find((r: { taskId: string }) => r.taskId === task.taskId);
+
+        taskStore.addLog(`[${i + 1}/${activeTasks.length}] Processing ${task.taskId}...`, 'info');
+        taskStore.addLog(``, 'info');
+
+        if (result?.success) {
+          const testCasesCount = result.testCasesCreated || 0;
+          taskStore.addLog(`  ✅ Found ${testCasesCount} test cases`, 'success');
+          taskStore.addLog(`  ✅ Created ${testCasesCount} test cases`, 'success');
+          totalCreated += testCasesCount;
+          successCount++;
+
+          // Add or update task in store
+          const existingTask = taskStore.tasks.find(t => t.id === task.taskId);
+          if (existingTask) {
+            taskStore.updateTask(task.taskId, {
+              status: TaskStatus.Success,
+              testCasesCreated: testCasesCount,
+              timestamp: Date.now(),
+            });
+          } else {
+            taskStore.addTask({
+              id: task.taskId,
+              title: task.title || `Test cases for ${task.taskId}`,
+              status: TaskStatus.Success,
+              analyticsType: (task.selectedType as AnalyticsType) || AnalyticsType.Overall,
+              testCasesCreated: testCasesCount,
+              timestamp: Date.now(),
+            });
+          }
+        } else {
+          const errorMessage = result?.error || 'Unknown error';
+          taskStore.addLog(`  ❌ ${errorMessage}`, 'error');
+          failedCount++;
+
+          // Add or update task with failed status
+          const existingTask = taskStore.tasks.find(t => t.id === task.taskId);
+          if (existingTask) {
+            taskStore.updateTask(task.taskId, {
+              status: TaskStatus.Failed,
+              error: errorMessage,
+              timestamp: Date.now(),
+            });
+          } else {
+            taskStore.addTask({
+              id: task.taskId,
+              title: task.title || `Test cases for ${task.taskId}`,
+              status: TaskStatus.Failed,
+              analyticsType: (task.selectedType as AnalyticsType) || AnalyticsType.Overall,
+              error: errorMessage,
+              timestamp: Date.now(),
+            });
+          }
+        }
+      }
+
+      // Summary
+      taskStore.addLog('', 'info'); // Empty line
+      taskStore.addLog('', 'info');
+      taskStore.addLog(`📊 Batch Processing Complete`, 'info');
+      taskStore.addLog('', 'info');
+      taskStore.addLog(`✅ Successful: ${successCount}/${activeTasks.length}`, 'success');
+      if (failedCount > 0) {
+        taskStore.addLog(`❌ Failed: ${failedCount}/${activeTasks.length}`, 'error');
+      }
+
+      // Show notification
+      if (successCount > 0) {
+        showSuccess(
+          `Successfully processed ${successCount} task${successCount > 1 ? 's' : ''} with ${totalCreated} test case${totalCreated !== 1 ? 's' : ''}`
+        );
+      }
+      if (failedCount > 0) {
+        showError(
+          `${failedCount} task${failedCount > 1 ? 's' : ''} failed to process`
+        );
+      }
+
+      // Clear state for next batch
+      taskAnalyticsInfos.value = [];
+      availableTypes.value = [];
+      currentTaskId.value = null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      taskStore.addLog(`❌ Error: ${message}`, 'error');
+      showError(message);
+    } finally {
+      isSubmitting.value = false;
+    }
+  };
+
   return {
     isGenerating,
     isSubmitting,
@@ -435,5 +488,6 @@ export function useTaskGeneration() {
     handleClear,
     handleUpdateAnalyticsType,
     handleToggleSkip,
+    handleConfirmAndGenerate,
   };
 }
