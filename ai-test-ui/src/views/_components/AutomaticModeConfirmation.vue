@@ -1,32 +1,3 @@
-<script setup lang="ts">
-import { Button } from '@/components/ds';
-import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
-
-interface TaskAnalyticsInfo {
-  taskId: string;
-  title: string;
-  detectedType: string;
-  hasKeywordMatch: boolean;
-  selectedType: string;
-  skipped: boolean;
-}
-
-interface Props {
-  taskAnalyticsInfos: TaskAnalyticsInfo[];
-  availableTypes: string[];
-  isSubmitting: boolean;
-}
-
-defineProps<Props>();
-
-const emit = defineEmits<{
-  updateAnalyticsType: [taskId: string, type: string];
-  toggleSkip: [taskId: string];
-  confirmAndGenerate: [];
-  cancel: [];
-}>();
-</script>
-
 <template>
   <div class="pt-6 border-t border-gray-200 dark:border-gray-700 space-y-4">
     <div class="flex items-center gap-2">
@@ -70,3 +41,32 @@ const emit = defineEmits<{
     </p>
   </div>
 </template>
+
+<script setup lang="ts">
+import { Button } from '@/components/ds';
+import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
+
+interface TaskAnalyticsInfo {
+  taskId: string;
+  title: string;
+  detectedType: string;
+  hasKeywordMatch: boolean;
+  selectedType: string;
+  skipped: boolean;
+}
+
+interface Props {
+  taskAnalyticsInfos: TaskAnalyticsInfo[];
+  availableTypes: string[];
+  isSubmitting: boolean;
+}
+
+defineProps<Props>();
+
+const emit = defineEmits<{
+  updateAnalyticsType: [taskId: string, type: string];
+  toggleSkip: [taskId: string];
+  confirmAndGenerate: [];
+  cancel: [];
+}>();
+</script>

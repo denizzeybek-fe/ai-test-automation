@@ -1,3 +1,33 @@
+<template>
+  <Card>
+    <template #content>
+      <div class="grid grid-cols-2 gap-3">
+        <div
+          v-for="(card, index) in statCards"
+          :key="index"
+          :class="['flex flex-col items-center text-center p-3 rounded-lg border', card.bgColor, card.borderColor]"
+        >
+          <div :class="['w-8 h-8 rounded-lg flex items-center justify-center mb-2', card.iconBg]">
+            <i :class="[card.icon, 'text-lg', card.iconColor]" />
+          </div>
+          <p :class="['text-2xl font-bold', card.textColor]">
+            {{ card.value }}
+          </p>
+          <p class="text-xs font-medium text-slate-600 dark:text-gray-400 mt-1">
+            {{ card.label }}
+          </p>
+          <p
+            v-if="card.subtitle"
+            class="text-xs text-slate-500 dark:text-gray-500"
+          >
+            {{ card.subtitle }}
+          </p>
+        </div>
+      </div>
+    </template>
+  </Card>
+</template>
+
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
@@ -68,33 +98,3 @@ const statCards = computed<StatCard[]>(() => [
   },
 ]);
 </script>
-
-<template>
-  <Card>
-    <template #content>
-      <div class="grid grid-cols-2 gap-3">
-        <div
-          v-for="(card, index) in statCards"
-          :key="index"
-          :class="['flex flex-col items-center text-center p-3 rounded-lg border', card.bgColor, card.borderColor]"
-        >
-          <div :class="['w-8 h-8 rounded-lg flex items-center justify-center mb-2', card.iconBg]">
-            <i :class="[card.icon, 'text-lg', card.iconColor]" />
-          </div>
-          <p :class="['text-2xl font-bold', card.textColor]">
-            {{ card.value }}
-          </p>
-          <p class="text-xs font-medium text-slate-600 dark:text-gray-400 mt-1">
-            {{ card.label }}
-          </p>
-          <p
-            v-if="card.subtitle"
-            class="text-xs text-slate-500 dark:text-gray-500"
-          >
-            {{ card.subtitle }}
-          </p>
-        </div>
-      </div>
-    </template>
-  </Card>
-</template>

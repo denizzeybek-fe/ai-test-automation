@@ -22,6 +22,9 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off',
       'no-undef': 'off',
       'vue/multi-word-component-names': 'off',
+      'vue/block-order': ['error', {
+        order: ['template', 'script', 'style']
+      }],
     },
   },
   {

@@ -1,49 +1,3 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useTaskStore } from '@/stores/taskStore';
-import { Card, Badge, InputText } from '@/components/ds';
-import { TaskStatus } from '@/types';
-import type { TaskInfo } from '@/types';
-
-const taskStore = useTaskStore();
-
-const searchQuery = ref('');
-
-const filteredTasks = computed(() => {
-  if (!searchQuery.value) {
-    return taskStore.recentTasks;
-  }
-
-  const query = searchQuery.value.toLowerCase();
-  return taskStore.recentTasks.filter(task =>
-    task.id.toLowerCase().includes(query) ||
-    task.title.toLowerCase().includes(query) ||
-    task.analyticsType.toLowerCase().includes(query)
-  );
-});
-
-const tasks = computed(() => filteredTasks.value);
-
-const formatDate = (timestamp: number) => {
-  return new Date(timestamp).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-const getStatusVariant = (status: TaskInfo['status']) => {
-  const map: Record<string, 'success' | 'failed' | 'pending' | 'progress'> = {
-    [TaskStatus.Success]: 'success',
-    [TaskStatus.Failed]: 'failed',
-    [TaskStatus.Pending]: 'pending',
-    [TaskStatus.InProgress]: 'progress',
-  };
-  return map[status] || 'info';
-};
-</script>
-
 <template>
   <Card>
     <template #title>
@@ -125,3 +79,49 @@ const getStatusVariant = (status: TaskInfo['status']) => {
     </template>
   </Card>
 </template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useTaskStore } from '@/stores/taskStore';
+import { Card, Badge, InputText } from '@/components/ds';
+import { TaskStatus } from '@/types';
+import type { TaskInfo } from '@/types';
+
+const taskStore = useTaskStore();
+
+const searchQuery = ref('');
+
+const filteredTasks = computed(() => {
+  if (!searchQuery.value) {
+    return taskStore.recentTasks;
+  }
+
+  const query = searchQuery.value.toLowerCase();
+  return taskStore.recentTasks.filter(task =>
+    task.id.toLowerCase().includes(query) ||
+    task.title.toLowerCase().includes(query) ||
+    task.analyticsType.toLowerCase().includes(query)
+  );
+});
+
+const tasks = computed(() => filteredTasks.value);
+
+const formatDate = (timestamp: number) => {
+  return new Date(timestamp).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const getStatusVariant = (status: TaskInfo['status']) => {
+  const map: Record<string, 'success' | 'failed' | 'pending' | 'progress'> = {
+    [TaskStatus.Success]: 'success',
+    [TaskStatus.Failed]: 'failed',
+    [TaskStatus.Pending]: 'pending',
+    [TaskStatus.InProgress]: 'progress',
+  };
+  return map[status] || 'info';
+};
+</script>

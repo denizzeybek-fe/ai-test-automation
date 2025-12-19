@@ -1,3 +1,60 @@
+<template>
+  <div class="min-h-screen bg-[#f0f0f0] dark:bg-gray-900 transition-colors">
+    <!-- Header -->
+    <DashboardHeader
+      :connection-status="connectionStatus"
+      :is-dark="isDark"
+      @toggle-dark-mode="toggleDarkMode"
+    />
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <!-- Mode Badge -->
+      <ModeBadge
+        :mode="modeStore.mode"
+        :is-loading="modeStore.isLoading"
+        :message="modeStore.message"
+        :on-toggle="modeStore.toggleMode"
+      />
+
+      <!-- Two Column Layout: Left (Workflow) + Right (Monitoring) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Workflow (2/3 width) -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Task Input -->
+          <TaskInput
+            :is-generating="isGenerating"
+            :is-submitting="isSubmitting"
+            :generated-prompt="generatedPrompt"
+            :task-analytics-infos="taskAnalyticsInfos"
+            :available-types="availableTypes"
+            :mode="modeStore.mode"
+            @generate-prompt="handleGeneratePrompt"
+            @submit-response="handleSubmitResponse"
+            @clear="handleClear"
+            @update-analytics-type="handleUpdateAnalyticsType"
+            @toggle-skip="handleToggleSkip"
+            @confirm-and-generate="handleConfirmAndGenerate"
+          />
+        </div>
+
+        <!-- Right Column: Monitoring (1/3 width) -->
+        <div class="space-y-6">
+          <!-- Execution Viewer -->
+          <ExecutionViewer
+            :logs="executionLogs"
+            :is-executing="isGenerating"
+            @clear-logs="taskStore.clearLogs"
+          />
+
+          <!-- Task List -->
+          <TaskList />
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
@@ -57,63 +114,3 @@ onUnmounted(() => {
   socketStore.disconnect();
 });
 </script>
-
-<template>
-  <div class="min-h-screen bg-[#f0f0f0] dark:bg-gray-900 transition-colors">
-    <!-- Header -->
-    <DashboardHeader
-      :connection-status="connectionStatus"
-      :is-dark="isDark"
-      @toggle-dark-mode="toggleDarkMode"
-    />
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <!-- Mode Badge -->
-      <ModeBadge
-        :mode="modeStore.mode"
-        :is-loading="modeStore.isLoading"
-        :message="modeStore.message"
-        :on-toggle="modeStore.toggleMode"
-      />
-
-      <!-- Two Column Layout: Left (Workflow) + Right (Monitoring) -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column: Workflow (2/3 width) -->
-        <div class="lg:col-span-2 space-y-6">
-          <!-- Task Input -->
-          <TaskInput
-            :is-generating="isGenerating"
-            :is-submitting="isSubmitting"
-            :generated-prompt="generatedPrompt"
-            :task-analytics-infos="taskAnalyticsInfos"
-            :available-types="availableTypes"
-            :mode="modeStore.mode"
-            @generate-prompt="handleGeneratePrompt"
-            @submit-response="handleSubmitResponse"
-            @clear="handleClear"
-            @update-analytics-type="handleUpdateAnalyticsType"
-            @toggle-skip="handleToggleSkip"
-            @confirm-and-generate="handleConfirmAndGenerate"
-          />
-        </div>
-
-        <!-- Right Column: Monitoring (1/3 width) -->
-        <div class="space-y-6">
-          <!-- Stats Cards -->
-          <!-- <StatsCards /> -->
-
-          <!-- Execution Viewer -->
-          <ExecutionViewer
-            :logs="executionLogs"
-            :is-executing="isGenerating"
-            @clear-logs="taskStore.clearLogs"
-          />
-
-          <!-- Task List -->
-          <TaskList />
-        </div>
-      </div>
-    </main>
-  </div>
-</template>

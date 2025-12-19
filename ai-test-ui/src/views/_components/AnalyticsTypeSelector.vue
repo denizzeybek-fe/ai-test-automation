@@ -1,30 +1,3 @@
-<script setup lang="ts">
-import { Select, Button } from '@/components/ds';
-import { SkipButtonLabel } from '../_enums/SkipButtonLabel';
-
-interface TaskAnalyticsInfo {
-  taskId: string;
-  title: string;
-  detectedType: string;
-  hasKeywordMatch: boolean;
-  selectedType: string;
-  skipped: boolean;
-}
-
-interface Props {
-  taskAnalyticsInfos: TaskAnalyticsInfo[];
-  availableTypes: string[];
-  isSubmitting: boolean;
-}
-
-defineProps<Props>();
-
-const emit = defineEmits<{
-  updateAnalyticsType: [taskId: string, type: string];
-  toggleSkip: [taskId: string];
-}>();
-</script>
-
 <template>
   <div
     v-if="taskAnalyticsInfos.length > 0"
@@ -98,3 +71,30 @@ const emit = defineEmits<{
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { Select, Button } from '@/components/ds';
+import { SkipButtonLabel } from '../_enums/SkipButtonLabel';
+
+interface TaskAnalyticsInfo {
+  taskId: string;
+  title: string;
+  detectedType: string;
+  hasKeywordMatch: boolean;
+  selectedType: string;
+  skipped: boolean;
+}
+
+interface Props {
+  taskAnalyticsInfos: TaskAnalyticsInfo[];
+  availableTypes: string[];
+  isSubmitting: boolean;
+}
+
+defineProps<Props>();
+
+const emit = defineEmits<{
+  updateAnalyticsType: [taskId: string, type: string];
+  toggleSkip: [taskId: string];
+}>();
+</script>

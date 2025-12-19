@@ -1,3 +1,24 @@
+<template>
+  <div class="mode-badge-container">
+    <div :class="badgeClass">
+      <i :class="['icon', iconClass]" />
+      <div class="content">
+        <span class="title">{{ modeText }}</span>
+        <span class="message">{{ message }}</span>
+      </div>
+      <button
+        v-if="!isLoading"
+        class="toggle-btn"
+        :title="`Switch to ${mode === Mode.Automatic ? 'Manual' : 'Automatic'} Mode`"
+        @click="toggleMode"
+      >
+        <i :class="mode === Mode.Automatic ? 'pi pi-user' : 'pi pi-bolt'" />
+        {{ mode === Mode.Automatic ? ' Manual' : ' Auto' }}
+      </button>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Mode } from '@/enums';
@@ -30,27 +51,6 @@ const toggleMode = () => {
   props.onToggle();
 };
 </script>
-
-<template>
-  <div class="mode-badge-container">
-    <div :class="badgeClass">
-      <i :class="['icon', iconClass]" />
-      <div class="content">
-        <span class="title">{{ modeText }}</span>
-        <span class="message">{{ message }}</span>
-      </div>
-      <button
-        v-if="!isLoading"
-        class="toggle-btn"
-        :title="`Switch to ${mode === Mode.Automatic ? 'Manual' : 'Automatic'} Mode`"
-        @click="toggleMode"
-      >
-        <i :class="mode === Mode.Automatic ? 'pi pi-user' : 'pi pi-bolt'" />
-        {{ mode === Mode.Automatic ? ' Manual' : ' Auto' }}
-      </button>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .mode-badge-container {

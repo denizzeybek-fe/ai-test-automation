@@ -1,74 +1,3 @@
-<script setup lang="ts">
-import { ref } from 'vue';
-import { useForm, useField } from 'vee-validate';
-import * as yup from 'yup';
-import { Button, Textarea } from '@/components/ds';
-import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
-
-interface TaskAnalyticsInfo {
-  taskId: string;
-  title: string;
-  detectedType: string;
-  hasKeywordMatch: boolean;
-  selectedType: string;
-  skipped: boolean;
-}
-
-interface Props {
-  generatedPrompt: string;
-  taskAnalyticsInfos: TaskAnalyticsInfo[];
-  availableTypes: string[];
-  isSubmitting: boolean;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  submitResponse: [response: string];
-  updateAnalyticsType: [taskId: string, type: string];
-  toggleSkip: [taskId: string];
-  clear: [];
-}>();
-
-const isCopied = ref(false);
-
-// VeeValidate schema
-const schema = yup.object({
-  response: yup
-    .string()
-    .required('Please paste the response from Claude')
-    .min(10, 'Response seems too short. Please paste the complete response from Claude.')
-    .test('has-content', 'Response cannot be empty or whitespace only', (value) => {
-      return !!value && value.trim().length > 0;
-    }),
-});
-
-const { handleSubmit, resetForm } = useForm({
-  validationSchema: schema,
-});
-
-const { value: responseInput, errorMessage } = useField<string>('response');
-
-const onSubmit = handleSubmit((values) => {
-  emit('submitResponse', values.response.trim());
-});
-
-const copyPrompt = async () => {
-  await navigator.clipboard.writeText(props.generatedPrompt);
-  isCopied.value = true;
-  setTimeout(() => {
-    isCopied.value = false;
-  }, 2000);
-};
-
-// Expose method for parent to clear input
-const clear = () => {
-  resetForm();
-};
-
-defineExpose({ clear });
-</script>
-
 <template>
   <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -167,3 +96,74 @@ defineExpose({ clear });
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useForm, useField } from 'vee-validate';
+import * as yup from 'yup';
+import { Button, Textarea } from '@/components/ds';
+import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
+
+interface TaskAnalyticsInfo {
+  taskId: string;
+  title: string;
+  detectedType: string;
+  hasKeywordMatch: boolean;
+  selectedType: string;
+  skipped: boolean;
+}
+
+interface Props {
+  generatedPrompt: string;
+  taskAnalyticsInfos: TaskAnalyticsInfo[];
+  availableTypes: string[];
+  isSubmitting: boolean;
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  submitResponse: [response: string];
+  updateAnalyticsType: [taskId: string, type: string];
+  toggleSkip: [taskId: string];
+  clear: [];
+}>();
+
+const isCopied = ref(false);
+
+// VeeValidate schema
+const schema = yup.object({
+  response: yup
+    .string()
+    .required('Please paste the response from Claude')
+    .min(10, 'Response seems too short. Please paste the complete response from Claude.')
+    .test('has-content', 'Response cannot be empty or whitespace only', (value) => {
+      return !!value && value.trim().length > 0;
+    }),
+});
+
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: schema,
+});
+
+const { value: responseInput, errorMessage } = useField<string>('response');
+
+const onSubmit = handleSubmit((values) => {
+  emit('submitResponse', values.response.trim());
+});
+
+const copyPrompt = async () => {
+  await navigator.clipboard.writeText(props.generatedPrompt);
+  isCopied.value = true;
+  setTimeout(() => {
+    isCopied.value = false;
+  }, 2000);
+};
+
+// Expose method for parent to clear input
+const clear = () => {
+  resetForm();
+};
+
+defineExpose({ clear });
+</script>

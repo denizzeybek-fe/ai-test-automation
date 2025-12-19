@@ -1,41 +1,3 @@
-<script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
-import { Card, Button } from '@/components/ds';
-
-interface Props {
-  logs: string[];
-  isExecuting: boolean;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  clearLogs: [];
-}>();
-
-const logsContainer = ref<HTMLElement | null>(null);
-
-// Auto-scroll to bottom when new logs arrive
-watch(
-  () => props.logs.length,
-  async () => {
-    await nextTick();
-    if (logsContainer.value) {
-      logsContainer.value.scrollTop = logsContainer.value.scrollHeight;
-    }
-  }
-);
-
-const formatTimestamp = () => {
-  return new Date().toLocaleTimeString('en-US', {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
-</script>
-
 <template>
   <Card>
     <template #content>
@@ -139,3 +101,41 @@ const formatTimestamp = () => {
     </template>
   </Card>
 </template>
+
+<script setup lang="ts">
+import { ref, watch, nextTick } from 'vue';
+import { Card, Button } from '@/components/ds';
+
+interface Props {
+  logs: string[];
+  isExecuting: boolean;
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  clearLogs: [];
+}>();
+
+const logsContainer = ref<HTMLElement | null>(null);
+
+// Auto-scroll to bottom when new logs arrive
+watch(
+  () => props.logs.length,
+  async () => {
+    await nextTick();
+    if (logsContainer.value) {
+      logsContainer.value.scrollTop = logsContainer.value.scrollHeight;
+    }
+  }
+);
+
+const formatTimestamp = () => {
+  return new Date().toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+};
+</script>
