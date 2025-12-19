@@ -1,19 +1,15 @@
-import { ref } from 'vue';
-
-export interface ToastMessage {
-  id: number;
-  message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-}
-
-// Global state
-const toasts = ref<ToastMessage[]>([]);
-let toastIdCounter = 0;
+import { useToast as usePrimeToast } from 'primevue/usetoast';
 
 export function useToast() {
-  const showToast = (message: string, type: ToastMessage['type'] = 'info') => {
-    const id = ++toastIdCounter;
-    toasts.value.push({ id, message, type });
+  const toast = usePrimeToast();
+
+  const showToast = (message: string, severity: 'success' | 'error' | 'info' | 'warn' = 'info') => {
+    toast.add({
+      severity,
+      summary: severity.charAt(0).toUpperCase() + severity.slice(1),
+      detail: message,
+      life: 3000,
+    });
   };
 
   const showSuccess = (message: string) => {
@@ -29,23 +25,14 @@ export function useToast() {
   };
 
   const showWarning = (message: string) => {
-    showToast(message, 'warning');
-  };
-
-  const removeToast = (id: number) => {
-    const index = toasts.value.findIndex(t => t.id === id);
-    if (index !== -1) {
-      toasts.value.splice(index, 1);
-    }
+    showToast(message, 'warn');
   };
 
   return {
-    toasts,
     showToast,
     showSuccess,
     showError,
     showInfo,
     showWarning,
-    removeToast,
   };
 }

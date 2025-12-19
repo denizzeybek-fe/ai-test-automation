@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Input, Button } from '@/components/ds';
+import { useForm, useField } from 'vee-validate';
+import * as yup from 'yup';
+import { InputText, Button } from '@/components/ds';
 import { Mode } from '@/enums';
 
 interface Props {
@@ -16,46 +17,41 @@ const emit = defineEmits<{
   generatePrompt: [taskId: string];
 }>();
 
-const taskInput = ref('');
-const error = ref('');
-
-const isValidTaskId = computed(() => {
-  if (!taskInput.value.trim()) return false;
-
-  // Support both single and multiple task IDs separated by comma or space
-  const taskIds = taskInput.value.trim().split(/[,\s]+/).filter(id => id.length > 0);
-
-  // Each task ID must match format: PA-12345
-  return taskIds.every(id => /^[A-Z]+-\d+$/.test(id));
+// VeeValidate schema
+const schema = yup.object({
+  taskId: yup
+    .string()
+    .required('Please enter a task ID')
+    .test('valid-task-id', 'Invalid task ID format. Expected format: PA-12345 or PA-123, PA-456', (value) => {
+      if (!value) return false;
+      const taskIds = value.trim().split(/[,\s]+/).filter(id => id.length > 0);
+      return taskIds.every(id => /^[A-Z]+-\d+$/.test(id));
+    }),
 });
 
-const handleGeneratePrompt = () => {
-  error.value = '';
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: schema,
+});
 
-  if (!taskInput.value.trim()) {
-    error.value = 'Please enter a task ID';
-    return;
-  }
+const { value: taskInput, errorMessage } = useField<string>('taskId');
 
-  if (!isValidTaskId.value) {
-    error.value = 'Invalid task ID format. Expected format: PA-12345 or PA-123, PA-456';
-    return;
-  }
-
-  emit('generatePrompt', taskInput.value.trim());
-};
+const onSubmit = handleSubmit((values) => {
+  emit('generatePrompt', values.taskId.trim());
+});
 
 // Expose method for parent to clear input
 const clear = () => {
-  taskInput.value = '';
-  error.value = '';
+  resetForm();
 };
 
 defineExpose({ clear });
 </script>
 
 <template>
-  <div class="space-y-3">
+  <form
+    class="space-y-3"
+    @submit.prevent="onSubmit"
+  >
     <div class="flex items-center gap-2">
       <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold">1</span>
       <h3 class="text-xs font-semibold text-gray-900 dark:text-white">
@@ -63,23 +59,34 @@ defineExpose({ clear });
       </h3>
     </div>
 
-    <Input
-      v-model="taskInput"
-      type="text"
-      label="Task ID"
-      placeholder="PA-12345 or PA-123, PA-456, PA-789"
-      :disabled="isGenerating || hasGeneratedPrompt"
-      :error="error"
-      required
-    />
+    <div class="flex flex-col gap-2">
+      <label
+        for="taskId"
+        class="text-sm font-medium text-gray-700 dark:text-gray-300"
+      >
+        Task ID <span class="text-red-500">*</span>
+      </label>
+      <InputText
+        id="taskId"
+        v-model="taskInput"
+        placeholder="PA-12345 or PA-123, PA-456, PA-789"
+        :disabled="isGenerating || hasGeneratedPrompt"
+        :invalid="!!errorMessage"
+        class="w-full"
+      />
+      <small
+        v-if="errorMessage"
+        class="text-red-600 dark:text-red-400"
+      >{{ errorMessage }}</small>
+    </div>
 
     <Button
-      variant="primary"
-      :disabled="!isValidTaskId || isGenerating || isSubmitting || hasGeneratedPrompt"
+      type="submit"
+      :disabled="isGenerating || isSubmitting || hasGeneratedPrompt"
       :loading="isGenerating || (mode === Mode.Automatic && isSubmitting)"
-      @click="handleGeneratePrompt"
+      class="w-full"
     >
       {{ (isGenerating || isSubmitting) ? (mode === Mode.Automatic ? 'Processing Tasks...' : 'Generating Prompt...') : (mode === Mode.Automatic ? 'Process Tasks' : 'Generate Prompt') }}
     </Button>
-  </div>
+  </form>
 </template>

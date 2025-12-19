@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Button } from '@/components/ds';
+import { useForm, useField } from 'vee-validate';
+import * as yup from 'yup';
+import { Button, Textarea } from '@/components/ds';
 import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
 
 interface TaskAnalyticsInfo {
@@ -28,28 +30,28 @@ const emit = defineEmits<{
   clear: [];
 }>();
 
-const responseInput = ref('');
-const responseError = ref('');
 const isCopied = ref(false);
 
-const handleSubmitResponse = () => {
-  responseError.value = '';
+// VeeValidate schema
+const schema = yup.object({
+  response: yup
+    .string()
+    .required('Please paste the response from Claude')
+    .min(10, 'Response seems too short. Please paste the complete response from Claude.')
+    .test('has-content', 'Response cannot be empty or whitespace only', (value) => {
+      return !!value && value.trim().length > 0;
+    }),
+});
 
-  if (!responseInput.value.trim()) {
-    responseError.value = 'Please paste the response from Claude';
-    return;
-  }
+const { handleSubmit, resetForm } = useForm({
+  validationSchema: schema,
+});
 
-  // Try to parse as JSON to validate
-  try {
-    JSON.parse(responseInput.value);
-  } catch {
-    responseError.value = 'Invalid JSON format. Please paste the complete response from Claude.';
-    return;
-  }
+const { value: responseInput, errorMessage } = useField<string>('response');
 
-  emit('submitResponse', responseInput.value.trim());
-};
+const onSubmit = handleSubmit((values) => {
+  emit('submitResponse', values.response.trim());
+});
 
 const copyPrompt = async () => {
   await navigator.clipboard.writeText(props.generatedPrompt);
@@ -61,8 +63,7 @@ const copyPrompt = async () => {
 
 // Expose method for parent to clear input
 const clear = () => {
-  responseInput.value = '';
-  responseError.value = '';
+  resetForm();
 };
 
 defineExpose({ clear });
@@ -104,21 +105,19 @@ defineExpose({ clear });
           </h3>
         </div>
 
-        <div>
-          <textarea
+        <div class="flex flex-col gap-2">
+          <Textarea
             v-model="responseInput"
-            rows="11"
-            placeholder="Paste Claude response here (JSON format)..."
+            :rows="11"
+            placeholder="Paste Claude's complete response here..."
             :disabled="isSubmitting"
-            class="w-full h-64 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            :class="{ 'border-red-500': responseError }"
+            :invalid="!!errorMessage"
+            class="w-full font-mono text-xs"
           />
-          <p
-            v-if="responseError"
-            class="mt-1 text-sm text-red-600"
-          >
-            {{ responseError }}
-          </p>
+          <small
+            v-if="errorMessage"
+            class="text-red-600 dark:text-red-400"
+          >{{ errorMessage }}</small>
         </div>
       </div>
     </div>
@@ -135,16 +134,15 @@ defineExpose({ clear });
     <!-- Action Buttons -->
     <div class="flex items-center gap-3 mt-4">
       <Button
-        variant="primary"
-        :disabled="!responseInput.trim() || isSubmitting"
+        :disabled="isSubmitting"
         :loading="isSubmitting"
-        @click="handleSubmitResponse"
+        @click="onSubmit"
       >
         {{ isSubmitting ? 'Creating Test Cases...' : 'Submit Response' }}
       </Button>
 
       <Button
-        variant="secondary"
+        severity="secondary"
         :disabled="isSubmitting"
         @click="emit('clear')"
       >
@@ -152,8 +150,20 @@ defineExpose({ clear });
       </Button>
     </div>
 
-    <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
-      Copy the prompt above and paste it into Claude Desktop. Then paste Claude's response in the right panel.
-    </p>
+    <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+      <p class="text-xs text-blue-900 dark:text-blue-300 font-medium mb-2">
+        <i class="pi pi-info-circle mr-1" />
+        Important Instructions:
+      </p>
+      <ol class="text-xs text-blue-800 dark:text-blue-400 space-y-1 list-decimal list-inside">
+        <li>Copy the prompt above and paste it into Claude Desktop or Claude.ai</li>
+        <li>Wait for Claude to generate the complete JSON response</li>
+        <li>Copy the <strong>entire JSON response</strong> (starting with <code class="bg-blue-100 dark:bg-blue-950 px-1 rounded">&#123;</code> and ending with <code class="bg-blue-100 dark:bg-blue-950 px-1 rounded">&#125;</code>)</li>
+        <li>Paste it in the "Paste Claude Response" field on the right</li>
+      </ol>
+      <p class="text-xs text-blue-700 dark:text-blue-400 mt-2">
+        <strong>Expected format:</strong> <code class="bg-blue-100 dark:bg-blue-950 px-1 rounded">&#123; "TASK-ID": [test cases...] &#125;</code>
+      </p>
+    </div>
   </div>
 </template>

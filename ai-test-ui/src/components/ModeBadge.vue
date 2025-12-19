@@ -1,23 +1,3 @@
-<template>
-  <div class="mode-badge-container">
-    <div :class="badgeClass">
-      <span class="icon">{{ icon }}</span>
-      <div class="content">
-        <span class="title">{{ modeText }}</span>
-        <span class="message">{{ message }}</span>
-      </div>
-      <button
-        v-if="!isLoading"
-        class="toggle-btn"
-        :title="`Switch to ${mode === Mode.Automatic ? 'Manual' : 'Automatic'} Mode`"
-        @click="toggleMode"
-      >
-        {{ mode === Mode.Automatic ? '✋ Manual' : '🤖 Auto' }}
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Mode } from '@/enums';
@@ -36,9 +16,10 @@ const badgeClass = computed(() => ({
   'loading': props.isLoading,
 }));
 
-const icon = computed(() =>
-  props.isLoading ? '⏳' : props.mode === Mode.Automatic ? '🤖' : '✋'
-);
+const iconClass = computed(() => {
+  if (props.isLoading) return 'pi pi-clock';
+  return props.mode === Mode.Automatic ? 'pi pi-bolt' : 'pi pi-user';
+});
 
 const modeText = computed(() => {
   if (props.isLoading) return 'Detecting mode...';
@@ -49,6 +30,27 @@ const toggleMode = () => {
   props.onToggle();
 };
 </script>
+
+<template>
+  <div class="mode-badge-container">
+    <div :class="badgeClass">
+      <i :class="['icon', iconClass]" />
+      <div class="content">
+        <span class="title">{{ modeText }}</span>
+        <span class="message">{{ message }}</span>
+      </div>
+      <button
+        v-if="!isLoading"
+        class="toggle-btn"
+        :title="`Switch to ${mode === Mode.Automatic ? 'Manual' : 'Automatic'} Mode`"
+        @click="toggleMode"
+      >
+        <i :class="mode === Mode.Automatic ? 'pi pi-user' : 'pi pi-bolt'" />
+        {{ mode === Mode.Automatic ? ' Manual' : ' Auto' }}
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .mode-badge-container {
@@ -121,9 +123,18 @@ const toggleMode = () => {
   flex-shrink: 0;
 }
 
-.toggle-btn:hover {
-  background: currentColor;
+.mode-automatic .toggle-btn:hover {
+  background: #22c55e;
   color: white;
+  border-color: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mode-manual .toggle-btn:hover {
+  background: #f59e0b;
+  color: white;
+  border-color: #d97706;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Select, Button } from '@/components/ds';
 import { SkipButtonLabel } from '../_enums/SkipButtonLabel';
 
 interface TaskAnalyticsInfo {
@@ -33,7 +34,7 @@ const emit = defineEmits<{
       <span
         class="flex items-center justify-center w-5 h-5 rounded-full bg-purple-600 text-white text-xs font-bold"
       >
-        📊
+        <i class="pi pi-chart-bar text-xs" />
       </span>
       <h3 class="text-xs font-semibold text-gray-900 dark:text-white">
         Analytics Type Selection
@@ -54,15 +55,17 @@ const emit = defineEmits<{
               </span>
               <span
                 v-if="!task.hasKeywordMatch"
-                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
               >
-                ⚠️ No keyword matched
+                <i class="pi pi-exclamation-triangle text-xs" />
+                No keyword matched
               </span>
               <span
                 v-if="task.skipped"
-                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
               >
-                ⏭️ Skipped
+                <i class="pi pi-forward text-xs" />
+                Skipped
               </span>
             </div>
             <p class="text-xs text-gray-600 dark:text-gray-400 truncate">
@@ -71,33 +74,24 @@ const emit = defineEmits<{
           </div>
 
           <div class="flex items-center gap-2">
-            <select
-              :value="task.selectedType"
+            <Select
+              :model-value="task.selectedType"
+              :options="availableTypes"
               :disabled="task.skipped || isSubmitting"
-              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              @change="(e) => emit('updateAnalyticsType', task.taskId, (e.target as HTMLSelectElement).value)"
-            >
-              <option
-                v-for="type in availableTypes"
-                :key="type"
-                :value="type"
-              >
-                {{ type }}
-              </option>
-            </select>
+              size="small"
+              class="w-40"
+              @update:model-value="(value) => emit('updateAnalyticsType', task.taskId, value)"
+            />
 
-            <button
-              :class="[
-                'px-3 py-1.5 text-sm rounded-lg font-medium transition-colors',
-                task.skipped
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-              ]"
+            <Button
+              :severity="task.skipped ? 'success' : 'warn'"
               :disabled="isSubmitting"
+              size="small"
+              outlined
               @click="emit('toggleSkip', task.taskId)"
             >
               {{ task.skipped ? SkipButtonLabel.Include : SkipButtonLabel.Skip }}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

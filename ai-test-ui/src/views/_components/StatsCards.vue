@@ -33,7 +33,7 @@ const statCards = computed<StatCard[]>(() => [
     iconColor: 'text-green-600 dark:text-green-400',
     textColor: 'text-emerald-600 dark:text-green-400',
     borderColor: 'border-emerald-100/50 dark:border-green-900/30',
-    icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    icon: 'pi pi-check-circle',
     subtitle: `${successRate.value}%`,
   },
   {
@@ -44,7 +44,7 @@ const statCards = computed<StatCard[]>(() => [
     iconColor: 'text-red-600 dark:text-red-400',
     textColor: 'text-rose-600 dark:text-red-400',
     borderColor: 'border-rose-100/50 dark:border-red-900/30',
-    icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+    icon: 'pi pi-times-circle',
   },
   {
     label: 'Total Tasks',
@@ -54,7 +54,7 @@ const statCards = computed<StatCard[]>(() => [
     iconColor: 'text-blue-600 dark:text-blue-400',
     textColor: 'text-gray-900 dark:text-blue-400',
     borderColor: 'border-blue-100/50 dark:border-blue-900/30',
-    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+    icon: 'pi pi-list',
   },
   {
     label: 'Test Cases',
@@ -64,47 +64,37 @@ const statCards = computed<StatCard[]>(() => [
     iconColor: 'text-purple-600 dark:text-purple-400',
     textColor: 'text-violet-600 dark:text-purple-400',
     borderColor: 'border-violet-100/50 dark:border-purple-900/30',
-    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+    icon: 'pi pi-file-check',
   },
 ]);
 </script>
 
 <template>
-  <Card :shadow="true">
-    <div class="p-3 grid grid-cols-2 gap-3 content-center">
-      <div
-        v-for="(card, index) in statCards"
-        :key="index"
-        :class="['flex flex-col items-center text-center p-3 rounded-lg border', card.bgColor, card.borderColor]"
-      >
-        <div :class="['w-8 h-8 rounded-lg flex items-center justify-center mb-2', card.iconBg]">
-          <svg
-            :class="['w-5 h-5', card.iconColor]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              :d="card.icon"
-            />
-          </svg>
-        </div>
-        <p :class="['text-2xl font-bold', card.textColor]">
-          {{ card.value }}
-        </p>
-        <p class="text-xs font-medium text-slate-600 dark:text-gray-400 mt-1">
-          {{ card.label }}
-        </p>
-        <p
-          v-if="card.subtitle"
-          class="text-xs text-slate-500 dark:text-gray-500"
+  <Card>
+    <template #content>
+      <div class="grid grid-cols-2 gap-3">
+        <div
+          v-for="(card, index) in statCards"
+          :key="index"
+          :class="['flex flex-col items-center text-center p-3 rounded-lg border', card.bgColor, card.borderColor]"
         >
-          {{ card.subtitle }}
-        </p>
+          <div :class="['w-8 h-8 rounded-lg flex items-center justify-center mb-2', card.iconBg]">
+            <i :class="[card.icon, 'text-lg', card.iconColor]" />
+          </div>
+          <p :class="['text-2xl font-bold', card.textColor]">
+            {{ card.value }}
+          </p>
+          <p class="text-xs font-medium text-slate-600 dark:text-gray-400 mt-1">
+            {{ card.label }}
+          </p>
+          <p
+            v-if="card.subtitle"
+            class="text-xs text-slate-500 dark:text-gray-500"
+          >
+            {{ card.subtitle }}
+          </p>
+        </div>
       </div>
-    </div>
+    </template>
   </Card>
 </template>

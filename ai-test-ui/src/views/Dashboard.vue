@@ -34,12 +34,12 @@ const {
   handleConfirmAndGenerate,
 } = useTaskGeneration();
 
-// Wrapper to auto-clear on success
+// Wrapper to handle response submission
 const handleSubmitResponse = async (taskId: string, response: string) => {
   try {
     await handleSubmitResponseBase(taskId, response);
-    // Auto-clear inputs after successful submission
-    handleClear();
+    // Note: Don't clear logs - keep them visible for user reference
+    // Only clear inputs via taskAnalyticsInfos reset in useTaskGeneration
   } catch {
     // Error is already handled in handleSubmitResponseBase
     // Don't clear inputs on error so user can retry

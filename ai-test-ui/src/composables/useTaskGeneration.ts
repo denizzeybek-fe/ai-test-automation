@@ -96,38 +96,29 @@ export function useTaskGeneration() {
       }
 
       // MANUAL MODE: Generate and show prompt for user to copy
-      // Generate batch prompt if multiple tasks, otherwise use single prompt
-      if (taskIds.length > 1) {
-        // Use batch prompt generation endpoint
-        taskStore.addLog(`📝 Generating batch prompt for ${taskIds.length} tasks...`, 'info');
+      // Always use batch prompt (works for single or multiple tasks)
+      taskStore.addLog(`📝 Generating batch prompt for ${taskIds.length} task(s)...`, 'info');
 
-        const batchTasks = taskInfos.map(info => ({
-          taskId: info.taskId,
-          analyticsType: info.selectedType,
+      const batchTasks = taskInfos.map(info => ({
+        taskId: info.taskId,
+        analyticsType: info.selectedType,
+      }));
+
+      const batchResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/prompts/generate/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: batchTasks }),
+      });
+
+      if (!batchResponse.ok) {
+        const errorData = await batchResponse.json().catch(() => ({
+          error: 'Failed to generate batch prompt'
         }));
-
-        const batchResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/prompts/generate/batch`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tasks: batchTasks }),
-        });
-
-        if (!batchResponse.ok) {
-          const errorData = await batchResponse.json().catch(() => ({
-            error: 'Failed to generate batch prompt'
-          }));
-          throw new Error(errorData.error || 'Failed to generate batch prompt');
-        }
-
-        const batchData = await batchResponse.json();
-        generatedPrompt.value = batchData.prompt;
-      } else {
-        // Single task: use existing single prompt
-        const data = await PromptsService.postApiPromptsGenerate({
-          taskId: taskIds[0]!.trim(), // Non-null assertion: length check above guarantees this exists
-        });
-        generatedPrompt.value = data.prompt || '';
+        throw new Error(errorData.error || 'Failed to generate batch prompt');
       }
+
+      const batchData = await batchResponse.json();
+      generatedPrompt.value = batchData.prompt;
 
       currentTaskTitle.value = taskIds.length > 1
         ? `Multiple Tasks (${taskIds.length})`
@@ -190,13 +181,32 @@ export function useTaskGeneration() {
           const browserStack = data.browserStack;
 
           taskStore.addLog(`  ✅ ${task.taskId}: ${testCasesCount} test cases parsed`, 'success');
+          taskStore.addLog(``, 'info'); // Empty line
 
           if (browserStack) {
-            taskStore.addLog(`  📁 Folder: ${browserStack.folderName}`, 'info');
-            taskStore.addLog(`  ✅ Created: ${browserStack.createdCount}/${testCasesCount}`, 'success');
+            taskStore.addLog(`  📁 Creating subfolder: ${browserStack.folderName}`, 'info');
+            taskStore.addLog(`  ✅ Created folder: ${browserStack.folderName} (ID: ${browserStack.folderId})`, 'success');
+            taskStore.addLog(``, 'info'); // Empty line
+
+            // Log each created test case
+            if (browserStack.createdTestCaseIds && browserStack.createdTestCaseIds.length > 0) {
+              browserStack.createdTestCaseIds.forEach((testCaseId: string, index: number) => {
+                const testCase = data.testCases?.[index];
+                const testCaseName = testCase?.name || 'Unknown test case';
+                taskStore.addLog(`  ✅ Created test case: ${testCaseId} - ${testCaseName}`, 'success');
+              });
+            }
+
+            taskStore.addLog(``, 'info'); // Empty line
+            taskStore.addLog(`  📊 Summary: ${browserStack.createdCount}/${testCasesCount} test cases created`, 'success');
 
             if (browserStack.failedCount > 0) {
               taskStore.addLog(`  ⚠️  Failed: ${browserStack.failedCount} test case(s)`, 'warning');
+              if (browserStack.failedTestCases && browserStack.failedTestCases.length > 0) {
+                browserStack.failedTestCases.forEach((failedName: string) => {
+                  taskStore.addLog(`    ❌ ${failedName}`, 'error');
+                });
+              }
             }
 
             totalCreated += browserStack.createdCount;
@@ -277,9 +287,10 @@ export function useTaskGeneration() {
         );
       }
 
-      // Clear state for next batch
+      // Clear input state for next batch (keep logs visible)
       generatedPrompt.value = null;
       currentTaskId.value = null;
+      taskAnalyticsInfos.value = [];
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       taskStore.addLog(`❌ Fatal Error: ${message}`, 'error');
@@ -290,6 +301,7 @@ export function useTaskGeneration() {
   };
 
   const handleClear = () => {
+    // Clear everything including logs (only when user explicitly clicks "Clear All")
     taskStore.clearLogs();
     generatedPrompt.value = null;
     currentTaskId.value = null;
