@@ -1,6 +1,36 @@
 # Batch Processing Workflow
 
-## Single Task (Current Implementation)
+## Operating Modes
+
+The system supports **two modes** based on Claude CLI availability:
+
+| Mode | How it works | Requirements |
+|------|--------------|--------------|
+| **Automatic** | Claude CLI runs in backend, fully automated | `npm i -g @anthropic-ai/claude-code` + `claude login` |
+| **Manual** | Copy prompt → Paste to Claude.ai → Copy response back | Just a Claude.ai account |
+
+> **Note:** Claude API Key is NOT required! See main README for details.
+
+---
+
+## Single Task
+
+### Automatic Mode (Recommended)
+
+```bash
+npm run dev run -- --tasks PA-34858
+```
+
+**Flow:**
+1. ✅ Fetch task from Jira
+2. ✅ Resolve analytics type
+3. ✅ Create subfolder
+4. ✅ Generate prompt
+5. ✅ **Claude CLI generates test cases automatically**
+6. ✅ Create test cases in BrowserStack
+7. ✅ Link to test run
+
+### Manual Mode (Fallback)
 
 ```bash
 npm run dev run -- --tasks PA-34858
@@ -12,7 +42,7 @@ npm run dev run -- --tasks PA-34858
 3. ✅ Create subfolder
 4. ✅ Generate prompt → `output/prompts/prompt-PA-34858-timestamp.md`
 5. ✅ Create empty response file → `output/responses/response-PA-34858.json`
-6. ⏸️ **USER:** Copy prompt → Claude Desktop → Paste response
+6. ⏸️ **USER:** Copy prompt → Claude Desktop/Claude.ai → Paste response
 7. ✅ Import test cases
 8. ✅ Create test cases in BrowserStack
 9. ✅ Link to test run

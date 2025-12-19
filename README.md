@@ -19,7 +19,18 @@ Automated test case generation system powered by Claude AI that integrates Jira,
 - Node.js 18+ and npm
 - Jira account with API access
 - BrowserStack account with Test Management enabled
-- Anthropic Claude API key
+- Claude account (free or paid) - for Claude.ai or Claude Desktop
+
+#### About Claude Integration
+
+> **Claude API Key is NOT required!** The system works in two modes:
+
+| Mode | How it works | Requirements |
+|------|--------------|--------------|
+| **Automatic** | Claude CLI runs in backend | `npm i -g @anthropic-ai/claude-code` + `claude login` |
+| **Manual** | Copy prompt → Paste to Claude.ai → Copy response back | Just a Claude.ai account |
+
+The system automatically detects which mode to use based on Claude CLI availability.
 
 ### Installation
 
@@ -54,11 +65,11 @@ BROWSERSTACK_USERNAME=your-username
 BROWSERSTACK_ACCESS_KEY=your-access-key
 BROWSERSTACK_PROJECT_ID=your-project-id
 
-# Claude AI Configuration
-ANTHROPIC_API_KEY=your-anthropic-api-key
-
 # Server Configuration
 PORT=3000
+
+# Note: Claude API Key is NOT needed!
+# The system uses Claude CLI (automatic mode) or Claude.ai (manual mode)
 ```
 
 ## 💻 Usage

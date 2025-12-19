@@ -10,7 +10,27 @@ The system automates test case creation by combining:
 3. **Claude AI** (generates comprehensive test cases)
 4. **BrowserStack** (stores and organizes test cases)
 
-Everything is automated except one manual step: pasting the AI prompt to Claude Desktop.
+## Operating Modes
+
+The system supports **two modes** based on Claude CLI availability:
+
+| Mode | Description | Requirements |
+|------|-------------|--------------|
+| **Automatic** | Fully automated - Claude CLI handles AI generation | `npm i -g @anthropic-ai/claude-code` + `claude login` |
+| **Manual** | Copy-paste workflow via Claude.ai or Claude Desktop | Just a Claude.ai account |
+
+> **Important:** Claude API Key is NOT required! The system uses Claude CLI (automatic) or your Claude.ai account (manual).
+
+### How the System Decides
+
+The system automatically detects which mode to use:
+
+```typescript
+// Backend (orchestrator.ts)
+const claudeAvailable = await this.isClaudeAvailable();
+// If claude CLI is installed → Automatic Mode
+// Otherwise → Manual Mode
+```
 
 ---
 
@@ -229,12 +249,23 @@ Return **ONLY** valid JSON (no markdown, no code blocks, no explanation):
 
 ---
 
-### Step 5: Manual AI Interaction ⏸️ **MANUAL STEP**
+### Step 5: AI Interaction
 
+#### Automatic Mode ✅ (No manual step)
+
+When Claude CLI is available, this step is fully automated:
+- Claude CLI receives the prompt
+- Generates test cases
+- Returns JSON response directly
+- **No user interaction needed!**
+
+#### Manual Mode ⏸️ (User action required)
+
+When Claude CLI is not available:
 ```
 ⏸️  MANUAL STEP:
 1. Copy prompt from: output/prompts/prompt-PA-34858-1765888390496.md
-2. Paste to Claude Desktop
+2. Paste to Claude Desktop or Claude.ai
 3. Save response to: output/responses/response-PA-34858.json
 4. Press Enter to continue...
 ```
@@ -665,4 +696,15 @@ Step 8/8: Linking test cases to test run...
 
 ## Summary
 
-This system automates 7 out of 8 steps in the test case creation workflow. The only manual step is pasting the AI prompt to Claude Desktop. By combining Jira task context with detailed product rules (271+ lines of specifications), the system generates comprehensive, actionable test cases that are automatically organized and linked in BrowserStack.
+This system automates the test case creation workflow:
+
+- **Automatic Mode**: All 8 steps are fully automated using Claude CLI
+- **Manual Mode**: 7 out of 8 steps are automated, only AI interaction requires copy-paste
+
+By combining Jira task context with detailed product rules (271+ lines of specifications), the system generates comprehensive, actionable test cases that are automatically organized and linked in BrowserStack.
+
+> **Tip:** Install Claude CLI for a fully automated experience:
+> ```bash
+> npm i -g @anthropic-ai/claude-code
+> claude login
+> ```

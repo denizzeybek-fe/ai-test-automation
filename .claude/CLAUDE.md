@@ -6,17 +6,31 @@ Automated test case generation system that integrates Jira, BrowserStack, and Cl
 
 ## Architecture
 
-- **Tech Stack**: Node.js + TypeScript + ESLint
-- **APIs**: BrowserStack, Jira, Anthropic Claude
-- **Input**: Jira task IDs or Sprint ID
+- **Tech Stack**: Node.js + TypeScript + Vue 3 + PrimeVue
+- **Backend**: Express API + WebSocket for real-time logs
+- **Frontend**: Vue 3 SPA with PrimeVue components
+- **APIs**: BrowserStack, Jira
+- **AI Integration**: Claude CLI (automatic) or Claude.ai (manual copy-paste)
+- **Input**: Jira task IDs via Web UI or CLI
 - **Output**: Test cases created in BrowserStack and linked to test runs
+
+## Claude Integration
+
+> **Claude API Key is NOT required!**
+
+The system operates in two modes:
+
+| Mode | How it works | Requirements |
+|------|--------------|--------------|
+| **Automatic** | Claude CLI runs in backend | `npm i -g @anthropic-ai/claude-code` + `claude login` |
+| **Manual** | Copy prompt → Paste to Claude.ai → Copy response back | Just a Claude.ai account |
 
 ## Key Components
 
 ### Services
 - `BrowserStackService`: BrowserStack API integration (test runs, test cases, folders)
 - `JiraService`: Jira API integration (fetch tasks, sprint tasks)
-- `AIService`: Claude AI integration (generate test cases from task data)
+- `Orchestrator`: Coordinates workflow, detects Claude CLI availability
 
 ### Resolvers
 - `RuleResolver`: Maps task title keywords to analytics type (overall/homepage/onsite/usage)
@@ -55,14 +69,14 @@ Main workflow coordinator that processes tasks end-to-end
 ## Phase Status
 
 - [x] Phase 0: Project Setup & Configuration
-- [ ] Phase 1: BrowserStack API Service
-- [ ] Phase 2: Rule Resolver & Folder Mapper
-- [ ] Phase 3: Jira Service
-- [ ] Phase 4: AI Test Case Generation
-- [ ] Phase 5: Orchestrator (End-to-End)
-- [ ] Phase 6: CLI Interface & Batch Processing
-- [ ] Phase 7: Error Handling & Retry
-- [ ] Phase 8: Final Polish & Documentation
+- [x] Phase 1: BrowserStack API Service
+- [x] Phase 2: Rule Resolver & Folder Mapper
+- [x] Phase 3: Jira Service
+- [x] Phase 4: AI Test Case Generation (Claude CLI + Manual Mode)
+- [x] Phase 5: Orchestrator (End-to-End)
+- [x] Phase 6: CLI Interface & Batch Processing
+- [x] Phase 7: Error Handling & Retry
+- [x] Phase 8: Web UI (Vue 3 + PrimeVue)
 
 ## Development Workflow
 
@@ -94,12 +108,16 @@ npm run check       # Both type-check + lint
 4. **Error logs** must be markdown format in errors/ directory
 5. **Rule files** location: `rules/product_rules/Valorem/{analytics_type}/{analytics_type}.mdc`
 
-## Next Steps
+## Project Complete
 
-Currently implementing Phase 1: BrowserStack API Service
+All phases have been implemented. The system is fully functional with:
+- Web UI for easy task management
+- Automatic mode with Claude CLI integration
+- Manual mode fallback for environments without Claude CLI
+- Real-time WebSocket logging
+- Batch processing support
 
-After each phase completion:
-1. Write the code
-2. Run `npm run check`
-3. Test the functionality
-4. Update phase status in this file
+### Maintenance Notes
+1. Always run `npm run check` before committing
+2. Test both Automatic and Manual modes when making changes
+3. Keep documentation in sync with code changes
