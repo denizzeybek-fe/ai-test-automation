@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { Orchestrator } from './services/orchestrator.js';
 import { JiraService } from './services/jira.service.js';
 import { BatchManager } from './utils/batch-manager.js';
+import { claudeCliService } from './services/claude-cli.service.js';
 
 // Load environment variables
 dotenv.config();
@@ -27,9 +28,27 @@ program
     'Batch size for AI prompt generation',
     process.env.AI_BATCH_SIZE || '20'
   )
-  .action(async (options: { tasks?: string[]; sprintId?: string; batchSize: string }) => {
+  .option('-m, --manual', 'Force manual mode (copy-paste workflow) even if Claude CLI is available')
+  .action(async (options: { tasks?: string[]; sprintId?: string; batchSize: string; manual?: boolean }) => {
     try {
       console.log(chalk.blue.bold('\n🤖 AI Test Automation Tool\n'));
+
+      // Determine mode
+      const cliAvailable = await claudeCliService.isAvailable();
+      const manualMode = options.manual || !cliAvailable;
+
+      if (manualMode) {
+        if (options.manual) {
+          console.log(chalk.yellow('📝 Manual mode (forced by --manual flag)\n'));
+        } else {
+          console.log(chalk.yellow('📝 Manual mode (Claude CLI not available)\n'));
+          console.log(chalk.gray('   Install Claude CLI for automatic mode:'));
+          console.log(chalk.gray('   npm install -g @anthropics/claude-code'));
+          console.log(chalk.gray('   claude login\n'));
+        }
+      } else {
+        console.log(chalk.green('🤖 Automatic mode enabled (using Claude CLI)\n'));
+      }
 
       // Validate options
       if (!options.tasks && !options.sprintId) {
@@ -118,7 +137,7 @@ program
             chalk.blue.bold(`\n📦 Batch ${i + 1}/${batches.length} (${batch.length} tasks)\n`)
           );
 
-          const successCount = await orchestrator.processBatchTasks(batch);
+          const successCount = await orchestrator.processBatchTasks(batch, manualMode);
           totalSuccess += successCount;
 
           if (i < batches.length - 1) {
@@ -139,7 +158,7 @@ program
       } else {
         // Single batch processing
         console.log(chalk.blue(`📦 Processing ${taskIds.length} task(s)\n`));
-        const successCount = await orchestrator.processBatchTasks(taskIds);
+        const successCount = await orchestrator.processBatchTasks(taskIds, manualMode);
 
         console.log(chalk.green.bold(`\n🎉 Processing Complete!\n`));
         console.log(chalk.white(`✅ Successful: ${successCount}/${taskIds.length}`));

@@ -6,9 +6,10 @@ import { FolderMapper } from '../resolvers/folder-mapper.js';
 import { PromptGenerator } from './prompt-generator.js';
 import { TestCaseImporter } from './testcase-importer.js';
 import { BrowserStackService } from './browserstack.service.js';
+import { claudeCliService } from './claude-cli.service.js';
 import { ErrorLogger } from '../utils/error-logger.js';
 import { withRetry } from '../utils/with-retry.js';
-import { AnalyticsType, TaskInfo } from '../types/index.js';
+import { AnalyticsType, TaskInfo, TestCase } from '../types/index.js';
 
 export class Orchestrator {
   private jiraService: JiraService;
@@ -49,6 +50,7 @@ export class Orchestrator {
    * Process a single task end-to-end
    * @param taskId - Jira task ID (e.g., "PA-12345")
    * @returns Success status
+   * @deprecated Use processBatchTasks instead - it handles both single and multiple tasks
    */
   async processSingleTask(taskId: string): Promise<boolean> {
     console.log(chalk.blue.bold(`\n🚀 Processing Task: ${taskId}\n`));
@@ -327,19 +329,17 @@ export class Orchestrator {
   /**
    * Process multiple tasks in batch
    * @param taskIds - Array of Jira task IDs
+   * @param manualMode - Force manual mode (copy-paste workflow) even if API key is configured
    * @returns Number of successfully processed tasks
    */
-  async processBatchTasks(taskIds: string[]): Promise<number> {
-    // Single task: use sequential flow (unchanged)
-    if (taskIds.length === 1) {
-      console.log(chalk.blue.bold(`\n🚀 Processing ${taskIds.length} Task\n`));
-      const success = await this.processSingleTask(taskIds[0]);
-      return success ? 1 : 0;
-    }
+  async processBatchTasks(taskIds: string[], manualMode = false): Promise<number> {
+    // Use batch flow for both single and multiple tasks
+    const taskCount = taskIds.length;
+    console.log(chalk.blue.bold(`\n🚀 Processing ${taskCount} Task${taskCount > 1 ? 's' : ''}\n`));
 
-    // Multiple tasks: use batch flow
-    console.log(chalk.blue.bold(`\n🚀 Processing ${taskIds.length} Tasks in Batch Mode\n`));
-    console.log(chalk.gray('Batch mode: All prompts generated first, then process all at once\n'));
+    if (taskCount > 1) {
+      console.log(chalk.gray('Batch mode: All prompts generated first, then process all at once\n'));
+    }
 
     const taskDataList: Array<{
       taskId: string;
@@ -426,49 +426,83 @@ export class Orchestrator {
 
     const batchPrompt = this.promptGenerator.generateBatchPrompt(batchPromptData);
     const timestamp = Date.now();
-    const batchPromptFileName = `prompt-batch-${timestamp}.md`;
-    this.promptGenerator.savePromptToFile(batchPrompt, batchPromptFileName);
 
-    // Create empty batch response file
-    const batchResponseFileName = `response-batch-${timestamp}.json`;
-    const batchResponseFilePath = `output/responses/${batchResponseFileName}`;
-    const fs = await import('fs/promises');
+    // Determine mode
+    const cliAvailable = await claudeCliService.isAvailable();
+    const useAutomaticMode = !manualMode && cliAvailable;
 
-    // Create empty object with task IDs as keys
-    const emptyResponse: Record<string, unknown[]> = {};
-    validTasks.forEach((task) => {
-      emptyResponse[task.taskId] = [];
-    });
-    await fs.writeFile(batchResponseFilePath, JSON.stringify(emptyResponse, null, 2), 'utf-8');
+    let batchTestCases: Record<string, TestCase[]> = {};
 
-    console.log(chalk.green(`✅ Batch prompt saved: output/prompts/${batchPromptFileName}`));
-    console.log(chalk.green(`✅ Empty response file created: ${batchResponseFilePath}\n`));
+    if (useAutomaticMode) {
+      // AUTOMATIC MODE: Call Claude CLI directly
+      console.log(chalk.green('🤖 Automatic mode enabled - Calling Claude CLI...\n'));
 
-    console.log(chalk.blue.bold('📋 Tasks in this batch:\n'));
-    validTasks.forEach((task, index) => {
-      console.log(chalk.gray(`  ${index + 1}. ${task.taskId} - ${task.taskInfo!.title}`));
-    });
+      try {
+        const response = await claudeCliService.generateTestCases(batchPrompt);
 
-    console.log(chalk.cyan.bold('\n⏸️  MANUAL STEP REQUIRED\n'));
-    console.log(chalk.white('1. Open the batch prompt file:'));
-    console.log(chalk.yellow(`   output/prompts/${batchPromptFileName}\n`));
-    console.log(chalk.white('2. Copy the entire content'));
-    console.log(chalk.white('3. Paste it into Claude Desktop'));
-    console.log(chalk.white('4. Copy the JSON response from Claude'));
-    console.log(chalk.white('5. Paste it into the response file:'));
-    console.log(chalk.yellow(`   ${batchResponseFilePath}\n`));
-    console.log(chalk.gray('   (File already has the correct structure with task IDs as keys)\n'));
-    console.log(chalk.yellow('Press Enter when the batch response is ready...\n'));
+        // Parse JSON response
+        const parsedResponse = JSON.parse(response) as Record<string, TestCase[]>;
+        batchTestCases = parsedResponse;
 
-    await this.waitForUserInput();
+        console.log(chalk.green(`✅ Received response from Claude CLI for ${Object.keys(batchTestCases).length} tasks\n`));
+      } catch (error) {
+        console.log(chalk.red.bold('\n❌ Automatic mode failed\n'));
+        console.log(chalk.red((error as Error).message));
+        console.log(chalk.yellow('\nFalling back to manual mode...\n'));
+
+        // Fallback to manual mode
+        manualMode = true;
+      }
+    }
+
+    if (manualMode || !useAutomaticMode) {
+      // MANUAL MODE: Save prompt and wait for user
+      console.log(chalk.yellow('📝 Manual mode - Copy-paste workflow\n'));
+
+      const batchPromptFileName = `prompt-batch-${timestamp}.md`;
+      this.promptGenerator.savePromptToFile(batchPrompt, batchPromptFileName);
+
+      // Create empty batch response file
+      const batchResponseFileName = `response-batch-${timestamp}.json`;
+      const batchResponseFilePath = `output/responses/${batchResponseFileName}`;
+      const fs = await import('fs/promises');
+
+      // Create empty object with task IDs as keys
+      const emptyResponse: Record<string, unknown[]> = {};
+      validTasks.forEach((task) => {
+        emptyResponse[task.taskId] = [];
+      });
+      await fs.writeFile(batchResponseFilePath, JSON.stringify(emptyResponse, null, 2), 'utf-8');
+
+      console.log(chalk.green(`✅ Batch prompt saved: output/prompts/${batchPromptFileName}`));
+      console.log(chalk.green(`✅ Empty response file created: ${batchResponseFilePath}\n`));
+
+      console.log(chalk.blue.bold('📋 Tasks in this batch:\n'));
+      validTasks.forEach((task, index) => {
+        console.log(chalk.gray(`  ${index + 1}. ${task.taskId} - ${task.taskInfo!.title}`));
+      });
+
+      console.log(chalk.cyan.bold('\n⏸️  MANUAL STEP REQUIRED\n'));
+      console.log(chalk.white('1. Open the batch prompt file:'));
+      console.log(chalk.yellow(`   output/prompts/${batchPromptFileName}\n`));
+      console.log(chalk.white('2. Copy the entire content'));
+      console.log(chalk.white('3. Paste it into Claude Desktop'));
+      console.log(chalk.white('4. Copy the JSON response from Claude'));
+      console.log(chalk.white('5. Paste it into the response file:'));
+      console.log(chalk.yellow(`   ${batchResponseFilePath}\n`));
+      console.log(chalk.gray('   (File already has the correct structure with task IDs as keys)\n'));
+      console.log(chalk.yellow('Press Enter when the batch response is ready...\n'));
+
+      await this.waitForUserInput();
+
+      // Import batch response from file
+      await this.testCaseImporter.waitForFile(batchResponseFilePath, 5000);
+      batchTestCases = this.testCaseImporter.importBatch(batchResponseFilePath);
+      console.log(chalk.green(`✅ Imported test cases for ${Object.keys(batchTestCases).length} tasks\n`));
+    }
 
     // Phase 2: Process all tasks
     console.log(chalk.blue.bold('\n📦 Phase 2: Creating Test Cases in BrowserStack\n'));
-
-    // Import batch response
-    await this.testCaseImporter.waitForFile(batchResponseFilePath, 5000);
-    const batchTestCases = this.testCaseImporter.importBatch(batchResponseFilePath);
-    console.log(chalk.green(`✅ Imported test cases for ${Object.keys(batchTestCases).length} tasks\n`));
 
     let successCount = 0;
 
@@ -513,9 +547,9 @@ export class Orchestrator {
               this.browserStackService.createTestCase(subfolder.id, {
                 name: testCase.name,
                 description: testCase.description,
-                preconditions: testCase.preconditions,
+                preconditions: testCase.preconditions || undefined,
                 test_case_steps: testCase.test_case_steps,
-                tags: testCase.tags,
+                tags: testCase.tags || undefined,
               }),
             { maxRetries: 3 }
           );
@@ -555,3 +589,6 @@ export class Orchestrator {
     return successCount;
   }
 }
+
+// Export singleton instance
+export const orchestrator = new Orchestrator();

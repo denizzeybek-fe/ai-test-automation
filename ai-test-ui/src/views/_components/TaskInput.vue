@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { Card, Input, Button } from '@/components/ds';
 import AnalyticsTypeSelector from './AnalyticsTypeSelector.vue';
+import { Mode } from '@/enums';
 
 interface TaskAnalyticsInfo {
   taskId: string;
@@ -18,6 +19,7 @@ interface Props {
   generatedPrompt: string | null;
   taskAnalyticsInfos: TaskAnalyticsInfo[];
   availableTypes: string[];
+  mode?: Mode;
 }
 
 const props = defineProps<Props>();
@@ -146,13 +148,13 @@ const copyPrompt = async () => {
           :loading="isGenerating"
           @click="handleGeneratePrompt"
         >
-          {{ isGenerating ? 'Generating Prompt...' : 'Generate Prompt' }}
+          {{ isGenerating ? (mode === Mode.Automatic ? 'Processing Tasks...' : 'Generating Prompt...') : (mode === Mode.Automatic ? 'Process Tasks' : 'Generate Prompt') }}
         </Button>
       </div>
 
-      <!-- Step 2 & 3: Prompt and Response Side by Side -->
+      <!-- Step 2 & 3: Prompt and Response Side by Side (Manual Mode Only) -->
       <div
-        v-if="generatedPrompt"
+        v-if="generatedPrompt && mode !== Mode.Automatic"
         class="pt-6 border-t border-gray-200 dark:border-gray-700"
       >
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

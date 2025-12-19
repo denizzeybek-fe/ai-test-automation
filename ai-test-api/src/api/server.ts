@@ -7,6 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger/config.js';
 import tasksRouter from './routes/tasks.route.js';
 import promptsRouter from './routes/prompts.route.js';
+import modeRouter from './routes/mode.route.js';
 import { initializeWebSocket } from './websocket/handler.js';
 
 const app = express();
@@ -34,6 +35,7 @@ app.get('/api-docs-json', (_req, res) => {
 // API Routes
 app.use('/api/tasks', tasksRouter);
 app.use('/api/prompts', promptsRouter);
+app.use('/api/mode', modeRouter);
 
 // Health check
 app.get('/health', (_req, res) => {

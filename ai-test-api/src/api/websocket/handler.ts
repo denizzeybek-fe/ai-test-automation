@@ -66,10 +66,10 @@ export function initializeWebSocket(io: SocketIOServer): void {
           } as StepPayload);
 
           try {
-            // Process single task
-            const success = await orchestrator.processSingleTask(taskId);
+            // Process single task using batch flow
+            const successCount = await orchestrator.processBatchTasks([taskId], false);
 
-            if (success) {
+            if (successCount > 0) {
               completedTasks++;
               socket.emit(WebSocketEvent.Step, {
                 taskId,

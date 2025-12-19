@@ -26,6 +26,14 @@ export default [
     },
   },
   {
+    files: ['tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
+  },
+  {
     ignores: ['dist/', 'node_modules/', '*.js', '!eslint.config.js'],
   },
 ];

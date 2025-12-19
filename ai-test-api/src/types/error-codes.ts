@@ -25,6 +25,11 @@ export enum ErrorCode {
   INVALID_REQUEST = 'INVALID_REQUEST',
   INVALID_JSON = 'INVALID_JSON',
   MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD',
+  INVALID_RESPONSE = 'INVALID_RESPONSE',
+
+  // Claude API errors (7xxx)
+  CLAUDE_API_ERROR = 'CLAUDE_API_ERROR',
+  CLAUDE_TOKEN_NOT_CONFIGURED = 'CLAUDE_TOKEN_NOT_CONFIGURED',
 
   // Server errors (9xxx)
   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
@@ -58,6 +63,11 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.INVALID_REQUEST]: 'Invalid request. Please check your input.',
   [ErrorCode.INVALID_JSON]: 'Invalid JSON format. Please check your response.',
   [ErrorCode.MISSING_REQUIRED_FIELD]: 'Missing required field. Please check your input.',
+  [ErrorCode.INVALID_RESPONSE]: 'Invalid response format from Claude API.',
+
+  // Claude API errors
+  [ErrorCode.CLAUDE_API_ERROR]: 'Claude API error. Please try again or check your token.',
+  [ErrorCode.CLAUDE_TOKEN_NOT_CONFIGURED]: 'Claude token not configured. Please add CLAUDE_TOKEN to .env or use manual mode.',
 
   // Server errors
   [ErrorCode.INTERNAL_SERVER_ERROR]: 'Server error occurred. Please try again or contact support.',
