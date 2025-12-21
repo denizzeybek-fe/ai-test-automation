@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#f0f0f0] dark:bg-gray-900 transition-colors">
+  <div class="min-h-screen bg-surface-100 dark:bg-surface-900 transition-colors">
     <!-- Header -->
     <DashboardHeader
       :connection-status="connectionStatus"
@@ -61,7 +61,7 @@ import { useTaskStore } from '@/stores/taskStore';
 import { useSocketStore } from '@/stores/socketStore';
 import { useModeStore } from '@/stores/modeStore';
 import { useDarkMode } from '@/composables/useDarkMode';
-import { useTaskGeneration } from '@/composables/useTaskGeneration';
+import { useTaskGeneration } from './_composables/useTaskGeneration';
 import DashboardHeader from './_components/DashboardHeader.vue';
 import TaskInput from './_components/TaskInput.vue';
 import TaskList from './_components/TaskList.vue';

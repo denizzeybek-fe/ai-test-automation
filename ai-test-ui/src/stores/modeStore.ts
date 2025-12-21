@@ -24,7 +24,7 @@ export const useModeStore = defineStore('mode', () => {
       const response = await fetch('http://localhost:3000/api/mode');
       const data = await response.json();
 
-      mode.value = data.mode === 'automatic' ? Mode.Automatic : Mode.Manual;
+      mode.value = data.mode === Mode.Automatic ? Mode.Automatic : Mode.Manual;
       message.value = data.message;
     } catch (error) {
       // Fallback to manual mode if backend unavailable

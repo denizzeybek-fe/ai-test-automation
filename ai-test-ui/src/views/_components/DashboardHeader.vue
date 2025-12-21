@@ -16,7 +16,7 @@
             :value="statusConfig.label"
             :icon="statusConfig.icon"
             rounded
-            :class="{ 'animate-pulse': connectionStatus === 'connected' }"
+            :class="{ 'animate-pulse': connectionStatus === ConnectionStatus.Connected }"
           />
 
           <Button
@@ -37,9 +37,10 @@
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 import { computed } from 'vue';
+import { ConnectionStatus } from '@/enums';
 
 interface Props {
-  connectionStatus: 'connected' | 'disconnected' | 'error';
+  connectionStatus: ConnectionStatus;
   isDark: boolean;
 }
 
@@ -50,19 +51,19 @@ const emit = defineEmits<{
 }>();
 
 const statusConfig = computed(() => {
-  const configs = {
-    connected: {
-      severity: 'success' as const,
+  const configs: Record<ConnectionStatus, { severity: 'success' | 'danger' | 'secondary'; label: string; icon: string }> = {
+    [ConnectionStatus.Connected]: {
+      severity: 'success',
       label: 'Connected',
       icon: 'pi pi-circle-fill'
     },
-    error: {
-      severity: 'danger' as const,
+    [ConnectionStatus.Error]: {
+      severity: 'danger',
       label: 'Error',
       icon: 'pi pi-circle-fill'
     },
-    disconnected: {
-      severity: 'secondary' as const,
+    [ConnectionStatus.Disconnected]: {
+      severity: 'secondary',
       label: 'Disconnected',
       icon: 'pi pi-circle-fill'
     }

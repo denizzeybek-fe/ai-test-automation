@@ -12,6 +12,7 @@ import {
   type ErrorPayload,
   type TaskInfo,
 } from '@/types';
+import { ConnectionStatus } from '@/enums';
 
 export const useSocketStore = defineStore('socket', () => {
   // State
@@ -20,10 +21,10 @@ export const useSocketStore = defineStore('socket', () => {
   const connectionError = ref<string | null>(null);
 
   // Computed
-  const connectionStatus = computed(() => {
-    if (isConnected.value) return 'connected';
-    if (connectionError.value) return 'error';
-    return 'disconnected';
+  const connectionStatus = computed<ConnectionStatus>(() => {
+    if (isConnected.value) return ConnectionStatus.Connected;
+    if (connectionError.value) return ConnectionStatus.Error;
+    return ConnectionStatus.Disconnected;
   });
 
   // Actions

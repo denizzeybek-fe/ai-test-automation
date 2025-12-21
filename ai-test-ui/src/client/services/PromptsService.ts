@@ -30,6 +30,33 @@ export class PromptsService {
             mediaType: 'application/json',
             errors: {
                 400: `Invalid request`,
+                404: `Task not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+    /**
+     * Automatic end-to-end test case generation using Claude CLI
+     * @param requestBody
+     * @returns any Tasks processed successfully
+     * @throws ApiError
+     */
+    public static postApiPromptsAutomatic(
+        requestBody: {
+            tasks: Array<{
+                taskId: string;
+                analyticsType: string;
+            }>;
+        },
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/prompts/automatic',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid request`,
+                500: `Internal server error`,
             },
         });
     }
@@ -50,6 +77,7 @@ export class PromptsService {
             errors: {
                 400: `Invalid request`,
                 404: `Task not found in Jira`,
+                500: `Internal server error`,
             },
         });
     }
