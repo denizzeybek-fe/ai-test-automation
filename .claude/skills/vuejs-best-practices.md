@@ -374,6 +374,21 @@ yarn lint:fix
 
 Both must pass before committing.
 
+### After Backend API Changes
+
+If the backend modified any Swagger endpoints (new endpoints, changed schemas, etc.):
+
+```bash
+# Regenerate API client from backend swagger
+yarn gcl
+```
+
+**Important:** Always regenerate the client after backend changes to:
+- New endpoints added
+- Request/response schemas changed
+- New models/enums added to swagger
+- Endpoint paths or methods modified
+
 ---
 
 ## Troubleshooting

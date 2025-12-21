@@ -514,6 +514,21 @@ npm run lint:fix
 
 Both must pass before committing.
 
+### After Swagger Changes
+
+If you modified any `@swagger` JSDoc comments (added/changed endpoints, schemas, or request/response types):
+
+```bash
+# Regenerate frontend API client
+cd ../ai-test-ui && npm run gcl
+```
+
+**Important:** Always regenerate the client after:
+- Adding new endpoints
+- Changing request/response schemas
+- Adding new models/enums to swagger
+- Modifying endpoint paths or methods
+
 ---
 
 ## Troubleshooting
