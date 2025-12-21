@@ -1,76 +1,13 @@
 import { Router } from 'express';
-import { JiraService } from '../../services/jira.service.js';
-import { RuleResolver } from '../../resolvers/rule-resolver.js';
-import { FolderMapper } from '../../resolvers/folder-mapper.js';
-import { PromptGenerator } from '../../services/prompt-generator.js';
-import { TestCaseImporter } from '../../services/testcase-importer.js';
-import { BrowserStackService } from '../../services/browserstack.service.js';
-import { ErrorLogger } from '../../utils/error-logger.js';
-import { withRetry } from '../../utils/with-retry.js';
-import { AnalyticsType, ErrorCode, ErrorMessages } from '../../types/index.js';
+import { ErrorMessages } from '../../types/index.js';
 import { orchestrator } from '../../services/orchestrator.js';
-import path from 'path';
+import { promptWorkflowService } from '../../services/prompt-workflow.service.js';
+import {
+  getErrorCodeFromMessage,
+  getStatusCodeFromErrorCode,
+} from '../../utils/error-handler.js';
 
 const router = Router();
-
-/**
- * Helper function to determine error code from error message
- */
-function getErrorCodeFromMessage(errorMessage: string): ErrorCode {
-  if (errorMessage.includes('Task not found') || errorMessage.includes('404')) {
-    return ErrorCode.TASK_NOT_FOUND;
-  }
-  if (errorMessage.includes('Authentication failed') || errorMessage.includes('401') || errorMessage.includes('403')) {
-    return ErrorCode.AUTH_FAILED;
-  }
-  if (errorMessage.includes('Rate limit') || errorMessage.includes('429')) {
-    return ErrorCode.RATE_LIMIT_EXCEEDED;
-  }
-  if (errorMessage.includes('ENOENT') || errorMessage.includes('no such file')) {
-    return ErrorCode.RULE_FILE_NOT_FOUND;
-  }
-  return ErrorCode.INTERNAL_SERVER_ERROR;
-}
-
-/**
- * Helper function to get HTTP status code from error code
- */
-function getStatusCodeFromErrorCode(errorCode: ErrorCode): number {
-  switch (errorCode) {
-    case ErrorCode.TASK_NOT_FOUND:
-    case ErrorCode.RULE_FILE_NOT_FOUND:
-    case ErrorCode.RESPONSE_FILE_NOT_FOUND:
-      return 404;
-    case ErrorCode.AUTH_FAILED:
-    case ErrorCode.AUTH_UNAUTHORIZED:
-      return 401;
-    case ErrorCode.RATE_LIMIT_EXCEEDED:
-      return 429;
-    case ErrorCode.INVALID_REQUEST:
-    case ErrorCode.INVALID_JSON:
-    case ErrorCode.MISSING_REQUIRED_FIELD:
-    case ErrorCode.TASK_INVALID_FORMAT:
-      return 400;
-    default:
-      return 500;
-  }
-}
-
-// Initialize services
-const jiraService = new JiraService(
-  process.env.JIRA_BASE_URL || '',
-  process.env.JIRA_EMAIL || '',
-  process.env.JIRA_API_TOKEN || ''
-);
-const ruleResolver = new RuleResolver(path.join(process.cwd(), 'config/rules.config.json'));
-const folderMapper = new FolderMapper(path.join(process.cwd(), 'config/folders.config.json'));
-const promptGenerator = new PromptGenerator();
-const testCaseImporter = new TestCaseImporter();
-const browserStackService = new BrowserStackService(
-  process.env.BROWSERSTACK_USERNAME || '',
-  process.env.BROWSERSTACK_ACCESS_KEY || '',
-  process.env.BROWSERSTACK_PROJECT_ID || ''
-);
 
 /**
  * @swagger
@@ -215,40 +152,11 @@ router.post('/generate/batch', async (req, res) => {
       });
     }
 
-    // Fetch all tasks and prepare batch prompt data
-    const batchPromptData = [];
-
-    for (const taskConfig of tasks) {
-      const { taskId, analyticsType } = taskConfig;
-
-      // 1. Fetch task from Jira
-      const taskInfo = await jiraService.getTask(taskId);
-
-      // 2. Load rule file for analytics type
-      const ruleFilePath = ruleResolver.getRuleFilePath(analyticsType as AnalyticsType);
-      const ruleContent = promptGenerator.readRuleFile(ruleFilePath);
-
-      batchPromptData.push({
-        taskInfo,
-        analyticsType: analyticsType as AnalyticsType,
-        ruleContent,
-      });
-    }
-
-    // 3. Generate batch prompt
-    const batchPrompt = promptGenerator.generateBatchPrompt(batchPromptData);
-
-    // 4. Save prompt to file
-    const promptFileName = `prompt-batch-${Date.now()}.md`;
-    promptGenerator.savePromptToFile(batchPrompt, promptFileName);
+    const result = await promptWorkflowService.generateBatchPrompt(tasks);
 
     return res.json({
       success: true,
-      prompt: batchPrompt,
-      taskCount: tasks.length,
-      taskIds: tasks.map(t => t.taskId),
-      promptFile: `output/prompts/${promptFileName}`,
-      timestamp: Date.now(),
+      ...result,
     });
   } catch (error) {
     const errorMessage = (error as Error).message;
@@ -312,13 +220,13 @@ router.post('/automatic', async (req, res) => {
       });
     }
 
-    const taskIds = tasks.map(t => t.taskId);
+    const taskIds = tasks.map((t) => t.taskId);
 
     // Use orchestrator to process tasks automatically
     const createdCount = await orchestrator.processBatchTasks(taskIds, false);
 
     // Return results
-    const results = taskIds.map(taskId => ({
+    const results = taskIds.map((taskId) => ({
       taskId,
       success: true,
       testCasesCreated: Math.floor(createdCount / taskIds.length), // Approximate
@@ -389,35 +297,11 @@ router.post('/generate', async (req, res) => {
       });
     }
 
-    // 1. Fetch task from Jira
-    const taskInfo = await jiraService.getTask(taskId);
-
-    // 2. Resolve analytics type
-    const analyticsType = ruleResolver.resolve(taskInfo.title);
-    const hasKeywordMatch = ruleResolver.hasKeywordMatch(taskInfo.title);
-    const availableTypes = ruleResolver.getTypes();
-
-    // 3. Load rule file
-    const ruleFilePath = ruleResolver.getRuleFilePath(analyticsType);
-    const ruleContent = promptGenerator.readRuleFile(ruleFilePath);
-
-    // 4. Generate prompt
-    const prompt = promptGenerator.generateSinglePrompt(taskInfo, analyticsType, ruleContent);
-
-    // 5. Save prompt to file
-    const promptFileName = `prompt-${taskId}-${Date.now()}.md`;
-    promptGenerator.savePromptToFile(prompt, promptFileName);
+    const result = await promptWorkflowService.generateSinglePrompt(taskId);
 
     return res.json({
       success: true,
-      taskId,
-      taskTitle: taskInfo.title,
-      prompt,
-      analyticsType,
-      hasKeywordMatch,
-      availableTypes,
-      promptFile: `output/prompts/${promptFileName}`,
-      timestamp: Date.now(),
+      ...result,
     });
   } catch (error) {
     const errorMessage = (error as Error).message;
@@ -467,105 +351,17 @@ router.post('/response', async (req, res) => {
       });
     }
 
-    // 1. Save response to file
-    const responseFileName = `response-${taskId}-${Date.now()}.json`;
-    const responseFilePath = `output/responses/${responseFileName}`;
-    const fs = await import('fs/promises');
-    await fs.writeFile(responseFilePath, response, 'utf-8');
-
-    // 2. Detect if response is batch format or single format
-    let parsedResponse: unknown;
-    try {
-      parsedResponse = JSON.parse(response);
-    } catch (error) {
-      throw new Error(`Invalid JSON response: ${(error as Error).message}`);
-    }
-
-    // Check if it's batch format (object with task IDs as keys)
-    const isBatchFormat =
-      typeof parsedResponse === 'object' &&
-      parsedResponse !== null &&
-      !Array.isArray(parsedResponse) &&
-      Object.keys(parsedResponse).some(key => /^[A-Z]+-\d+$/.test(key));
-
-    let testCases;
-    if (isBatchFormat) {
-      // Batch format: { "PA-12345": [...], "PA-67890": [...] }
-      const batchTestCases = testCaseImporter.importBatch(responseFilePath);
-      testCases = batchTestCases[taskId];
-
-      if (!testCases || testCases.length === 0) {
-        throw new Error(`No test cases found for task ${taskId} in batch response`);
-      }
-    } else {
-      // Single format: [...]
-      testCases = testCaseImporter.importSingle(responseFilePath);
-    }
-
-    // 3. Get task info if not provided
-    let finalTaskTitle = taskTitle;
-    let finalAnalyticsType = analyticsType;
-
-    if (!finalTaskTitle || !finalAnalyticsType) {
-      const taskInfo = await jiraService.getTask(taskId);
-      finalTaskTitle = finalTaskTitle || taskInfo.title;
-      finalAnalyticsType = finalAnalyticsType || ruleResolver.resolve(taskInfo.title);
-    }
-
-    // 4. Create BrowserStack folder and test cases
-    const parentFolderId = folderMapper.getFolderId(finalAnalyticsType as AnalyticsType);
-    const subfolderName = `${taskId} - ${finalTaskTitle}`;
-    const subfolder = await browserStackService.findOrCreateSubfolder(
-      parentFolderId,
-      subfolderName
+    const result = await promptWorkflowService.processResponse(
+      taskId,
+      response,
+      taskTitle,
+      analyticsType
     );
-
-    // 5. Create test cases in BrowserStack
-    const createdTestCaseIds: string[] = [];
-    const failedTestCases: string[] = [];
-
-    for (const testCase of testCases) {
-      try {
-        const createdTestCase = await withRetry(
-          () =>
-            browserStackService.createTestCase(subfolder.id, {
-              name: testCase.name,
-              description: testCase.description,
-              preconditions: testCase.preconditions,
-              test_case_steps: testCase.test_case_steps,
-              tags: testCase.tags,
-            }),
-          { maxRetries: 3 }
-        );
-        createdTestCaseIds.push(createdTestCase.identifier);
-      } catch (error) {
-        // Log error but continue with other test cases
-        ErrorLogger.log(
-          ErrorLogger.createLog(
-            error as Error,
-            taskId,
-            `Create test case: ${testCase.name}`
-          )
-        );
-        failedTestCases.push(testCase.name);
-      }
-    }
 
     return res.json({
       success: true,
       message: 'Test cases created in BrowserStack',
-      taskId,
-      responseFile: responseFilePath,
-      testCasesCount: testCases.length,
-      testCases,
-      browserStack: {
-        folderId: subfolder.id,
-        folderName: subfolderName,
-        createdCount: createdTestCaseIds.length,
-        failedCount: failedTestCases.length,
-        createdTestCaseIds,
-        failedTestCases,
-      },
+      ...result,
     });
   } catch (error) {
     return res.status(500).json({
