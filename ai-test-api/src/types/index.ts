@@ -9,6 +9,11 @@ export interface TaskInfo {
   confluenceUrl?: string;
 }
 
+export enum Mode {
+  Automatic = 'automatic',
+  Manual = 'manual',
+}
+
 export enum AnalyticsType {
   Overall = 'overall',
   Homepage = 'homepage',

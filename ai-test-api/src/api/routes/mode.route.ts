@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { claudeCliService } from '../../services/claude-cli.service.js';
+import { Mode } from '../../types/index.js';
 
 const router = Router();
 
@@ -37,13 +38,13 @@ router.get('/', async (_req, res) => {
 
     res.json({
       available,
-      mode: available ? 'automatic' : 'manual',
+      mode: available ? Mode.Automatic : Mode.Manual,
       message,
     });
   } catch (error) {
     res.status(500).json({
       available: false,
-      mode: 'manual',
+      mode: Mode.Manual,
       message: 'Error checking Claude CLI status',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
