@@ -1,7 +1,29 @@
 # Vue.js Best Practices Skill
 
 **Name:** vuejs-best-practices
+**Version:** 1.0.0
+**Last Updated:** 2025-12-21
 **Description:** Vue.js 3 best practices for ai-test-ui project. Enforces folder structure, component limits, enum usage, Pinia patterns, and PrimeVue integration.
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Priority Levels](#priority-levels)
+3. [Quick Decision Guide](#quick-decision-guide)
+4. [Project Context](#project-context)
+5. [Instructions](#instructions)
+   - [Folder Structure](#-1-folder-structure)
+   - [SFC Block Order](#-2-sfc-block-order)
+   - [Component Line Limit](#-3-maximum-250-lines-per-component)
+   - [Enum Usage](#-4-enum-usage-mandatory)
+   - [API Client Usage](#-5-api-client-usage)
+   - [Pinia Store Patterns](#-6-api-calls-in-pinia-store-actions-only)
+6. [Common Anti-Patterns](#common-anti-patterns-to-avoid)
+7. [Troubleshooting](#troubleshooting)
+8. [Examples](#examples)
+9. [Checklist](#checklist)
 
 ---
 
@@ -24,6 +46,39 @@ This skill enforces Vue.js 3 best practices for `ai-test-ui`:
 - 🔴 **CRITICAL (Must)**: Breaks build/runtime if violated
 - 🟡 **IMPORTANT (Should)**: Causes maintainability issues
 - 🟢 **RECOMMENDED (Nice to have)**: Improves code quality
+
+---
+
+## Quick Decision Guide
+
+**"Where should this code go?"**
+```
+Is it reusable across views?
+├─ Yes → src/components/ or src/composables/
+└─ No → src/views/[View]/_components/ or _composables/
+```
+
+**"Is this value a defined state?"**
+```
+Does this value have limited, known options? (status, mode, type)
+├─ Yes → Create/use enum
+└─ No → Can use string literal (user input, dynamic text)
+```
+
+**"How should I fetch API data?"**
+```
+Need to fetch/mutate data from API?
+├─ Yes → Create Pinia store action, call from component
+└─ No → Use local ref/reactive state
+```
+
+**"Where does this enum belong?"**
+```
+Is this enum used in multiple views?
+├─ Yes → src/enums/ (with barrel export)
+├─ No, only one view → src/views/[View]/_enums/
+└─ From backend API → Use src/client/models/ (auto-generated)
+```
 
 ---
 
