@@ -28,9 +28,21 @@
           @cancel="handleClear"
         />
 
-        <!-- Manual Mode: Prompt and Response -->
+        <!-- Manual Mode: Analytics Type Selection (before prompt generation) -->
+        <ManualModeTypeSelection
+          v-if="mode === Mode.Manual && taskAnalyticsInfos.length > 0 && !generatedPrompt"
+          :task-analytics-infos="taskAnalyticsInfos"
+          :available-types="availableTypes"
+          :is-generating="isGenerating"
+          @update-analytics-type="(taskId, type) => emit('updateAnalyticsType', taskId, type)"
+          @toggle-skip="(taskId) => emit('toggleSkip', taskId)"
+          @generate-prompt="emit('generateManualPrompt')"
+          @cancel="handleClear"
+        />
+
+        <!-- Manual Mode: Prompt and Response (after prompt is generated) -->
         <ManualModePromptResponse
-          v-if="generatedPrompt && mode !== Mode.Automatic"
+          v-if="generatedPrompt && mode === Mode.Manual"
           ref="manualModeRef"
           :generated-prompt="generatedPrompt"
           :task-analytics-infos="taskAnalyticsInfos"
@@ -59,6 +71,7 @@ import { ref, watch } from 'vue';
 import { Card } from '@/components/ds';
 import TaskIdInput from './TaskIdInput.vue';
 import AutomaticModeConfirmation from './AutomaticModeConfirmation.vue';
+import ManualModeTypeSelection from './ManualModeTypeSelection.vue';
 import ManualModePromptResponse from './ManualModePromptResponse.vue';
 import { Mode } from '@/enums';
 
@@ -84,6 +97,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   generatePrompt: [taskId: string];
+  generateManualPrompt: [];
   submitResponse: [taskId: string, response: string];
   clear: [];
   updateAnalyticsType: [taskId: string, type: string];

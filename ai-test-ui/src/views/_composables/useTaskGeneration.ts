@@ -41,8 +41,7 @@ export function useTaskGeneration() {
       }
 
       const taskInfos: TaskAnalyticsInfo[] = [];
-      let combinedTitle = '';
-      let combinedAnalyticsType = '';
+      let hasSetAvailableTypes = false;
 
       // Log based on mode
       if (modeStore.mode === Mode.Automatic) {
@@ -67,43 +66,22 @@ export function useTaskGeneration() {
           skipped: false,
         });
 
-        if (!combinedTitle) {
-          combinedTitle = data.taskTitle;
-          combinedAnalyticsType = data.analyticsType;
+        if (!hasSetAvailableTypes) {
           availableTypes.value = data.availableTypes;
+          hasSetAvailableTypes = true;
         }
       }
 
       taskAnalyticsInfos.value = taskInfos;
 
-      // Automatic mode: wait for user confirmation
+      // Both modes: wait for user to review/confirm analytics types
+      taskStore.addLog(`✅ Task details fetched successfully`, 'success');
+
       if (modeStore.mode === Mode.Automatic) {
-        taskStore.addLog(`✅ Task details fetched successfully`, 'success');
         taskStore.addLog(`👀 Please review analytics types below and click "Confirm & Generate"`, 'info');
-        return;
+      } else {
+        taskStore.addLog(`👀 Please review analytics types below and click "Generate Prompt"`, 'info');
       }
-
-      // Manual mode: generate prompt for copy-paste
-      taskStore.addLog(`📝 Generating batch prompt for ${taskIds.length} task(s)...`, 'info');
-
-      const batchTasks = taskInfos.map(info => ({
-        taskId: info.taskId,
-        analyticsType: info.selectedType,
-      }));
-
-      const batchData = await promptStore.generateBatchPrompt(batchTasks);
-      generatedPrompt.value = batchData.prompt;
-
-      currentTaskTitle.value = taskIds.length > 1
-        ? `Multiple Tasks (${taskIds.length})`
-        : combinedTitle || `Task ${taskIds[0]!}`;
-      currentAnalyticsType.value = combinedAnalyticsType || AnalyticsType.Overall;
-
-      taskStore.addLog(`✅ Generated prompts for ${taskIds.length} task(s) successfully!`, 'success');
-      taskStore.addLog(`📋 Analytics Type: ${currentAnalyticsType.value}`, 'info');
-      taskStore.addLog(`📋 Copy the combined prompt above and paste it into Claude Desktop`, 'info');
-
-      showSuccess(`Successfully generated prompt for ${taskIds.length} task${taskIds.length > 1 ? 's' : ''}`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       taskStore.addLog(`❌ Error: ${message}`, 'error');
@@ -169,6 +147,48 @@ export function useTaskGeneration() {
       showError(`Failed to process tasks: ${message}`);
     } finally {
       isSubmitting.value = false;
+    }
+  };
+
+  // Manual mode: Generate prompt after user confirms analytics types
+  const handleGenerateManualPrompt = async () => {
+    if (modeStore.mode !== Mode.Manual || taskAnalyticsInfos.value.length === 0) {
+      return;
+    }
+
+    isGenerating.value = true;
+    try {
+      const activeTasks = taskAnalyticsInfos.value.filter(t => !t.skipped);
+      if (activeTasks.length === 0) {
+        throw new Error('All tasks are skipped. Please include at least one task.');
+      }
+
+      taskStore.addLog(`📝 Generating batch prompt for ${activeTasks.length} task(s)...`, 'info');
+
+      const batchTasks = activeTasks.map(info => ({
+        taskId: info.taskId,
+        analyticsType: info.selectedType,
+      }));
+
+      const batchData = await promptStore.generateBatchPrompt(batchTasks);
+      generatedPrompt.value = batchData.prompt;
+
+      const firstTask = activeTasks[0]!;
+      currentTaskTitle.value = activeTasks.length > 1
+        ? `Multiple Tasks (${activeTasks.length})`
+        : firstTask.title || `Task ${firstTask.taskId}`;
+      currentAnalyticsType.value = firstTask.selectedType || AnalyticsType.Overall;
+
+      taskStore.addLog(`✅ Prompt generated successfully!`, 'success');
+      taskStore.addLog(`📋 Copy the prompt above and paste it into Claude Desktop`, 'info');
+
+      showSuccess(`Prompt generated for ${activeTasks.length} task${activeTasks.length > 1 ? 's' : ''}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      taskStore.addLog(`❌ Error: ${message}`, 'error');
+      showError(message);
+    } finally {
+      isGenerating.value = false;
     }
   };
 
@@ -372,5 +392,6 @@ export function useTaskGeneration() {
     handleUpdateAnalyticsType,
     handleToggleSkip,
     handleConfirmAndGenerate,
+    handleGenerateManualPrompt,
   };
 }

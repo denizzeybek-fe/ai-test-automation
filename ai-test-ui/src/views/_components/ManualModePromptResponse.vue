@@ -10,18 +10,22 @@
           </h3>
         </div>
 
-        <div class="relative">
-          <div class="h-64 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs">
-            <pre class="whitespace-pre-wrap text-gray-900 dark:text-gray-100">{{ generatedPrompt }}</pre>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            class="absolute top-2 right-2"
+        <div class="relative h-64 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-xs">
+          <button
+            type="button"
+            class="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 text-xs rounded-md transition-all duration-200"
+            :class="isCopied
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              : 'bg-white/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 shadow-sm'"
             @click="copyPrompt"
           >
-            {{ isCopied ? 'Copied!' : 'Copy' }}
-          </Button>
+            <i
+              :class="isCopied ? 'pi pi-check' : 'pi pi-copy'"
+              class="text-xs"
+            />
+            <span>{{ isCopied ? 'Copied!' : 'Copy' }}</span>
+          </button>
+          <pre class="whitespace-pre-wrap text-gray-900 dark:text-gray-100">{{ generatedPrompt }}</pre>
         </div>
       </div>
 

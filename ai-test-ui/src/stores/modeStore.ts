@@ -2,32 +2,39 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Mode } from '@/enums';
 
+const STORAGE_KEY = 'ai-test-mode-preference';
+
 export const useModeStore = defineStore('mode', () => {
   const mode = ref<Mode>(Mode.Manual);
   const isLoading = ref(true);
   const message = ref('');
+  const isCliAvailable = ref(false);
 
   const detectMode = async () => {
-    // Check for manual mode forced by query parameter
-    const params = new URLSearchParams(window.location.search);
-    const forcedManual = params.get('manual') === 'true';
-
-    if (forcedManual) {
-      mode.value = Mode.Manual;
-      message.value = 'Manual mode (forced by query parameter)';
-      isLoading.value = false;
-      return;
-    }
-
     // Check backend for Claude CLI availability
     try {
       const response = await fetch('http://localhost:3000/api/mode');
       const data = await response.json();
 
-      mode.value = data.mode === Mode.Automatic ? Mode.Automatic : Mode.Manual;
-      message.value = data.message;
-    } catch (error) {
+      isCliAvailable.value = data.available;
+
+      // Check localStorage for user preference
+      const savedMode = localStorage.getItem(STORAGE_KEY) as Mode | null;
+
+      if (savedMode && Object.values(Mode).includes(savedMode)) {
+        // User has a saved preference
+        mode.value = savedMode;
+        message.value = savedMode === Mode.Automatic
+          ? 'Automatic mode (user preference)'
+          : 'Manual mode (user preference)';
+      } else {
+        // No preference, default to Manual
+        mode.value = Mode.Manual;
+        message.value = 'Manual mode (default)';
+      }
+    } catch {
       // Fallback to manual mode if backend unavailable
+      isCliAvailable.value = false;
       mode.value = Mode.Manual;
       message.value = 'Manual mode (backend unavailable)';
     } finally {
@@ -36,23 +43,21 @@ export const useModeStore = defineStore('mode', () => {
   };
 
   const toggleMode = () => {
-    const currentUrl = new URL(window.location.href);
+    const newMode = mode.value === Mode.Automatic ? Mode.Manual : Mode.Automatic;
+    mode.value = newMode;
+    message.value = newMode === Mode.Automatic
+      ? 'Automatic mode (user preference)'
+      : 'Manual mode (user preference)';
 
-    if (mode.value === Mode.Automatic) {
-      // Switch to manual
-      currentUrl.searchParams.set('manual', 'true');
-    } else {
-      // Switch to automatic
-      currentUrl.searchParams.delete('manual');
-    }
-
-    window.location.href = currentUrl.toString();
+    // Save to localStorage
+    localStorage.setItem(STORAGE_KEY, newMode);
   };
 
   return {
     mode,
     isLoading,
     message,
+    isCliAvailable,
     detectMode,
     toggleMode,
   };

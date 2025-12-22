@@ -35,6 +35,7 @@
             @update-analytics-type="handleUpdateAnalyticsType"
             @toggle-skip="handleToggleSkip"
             @confirm-and-generate="handleConfirmAndGenerate"
+            @generate-manual-prompt="handleGenerateManualPrompt"
           />
         </div>
 
@@ -89,6 +90,7 @@ const {
   handleUpdateAnalyticsType,
   handleToggleSkip,
   handleConfirmAndGenerate,
+  handleGenerateManualPrompt,
 } = useTaskGeneration();
 
 // Wrapper to handle response submission
