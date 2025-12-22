@@ -37,7 +37,7 @@
       :loading="isGenerating || (mode === Mode.Automatic && isSubmitting)"
       class="w-full"
     >
-      {{ (isGenerating || isSubmitting) ? (mode === Mode.Automatic ? 'Processing Tasks...' : 'Generating Prompt...') : (mode === Mode.Automatic ? 'Process Tasks' : 'Generate Prompt') }}
+      {{ (isGenerating || isSubmitting) ? (mode === Mode.Automatic ? 'Processing Tasks...' : 'Fetching Task...') : (mode === Mode.Automatic ? 'Process Tasks' : 'Fetch Task') }}
     </Button>
   </form>
 </template>

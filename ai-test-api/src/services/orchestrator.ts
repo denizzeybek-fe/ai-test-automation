@@ -61,7 +61,15 @@ export class Orchestrator {
       const taskInfo = await withRetry(() => this.jiraService.getTask(taskId), {
         maxRetries: 3,
       });
-      console.log(chalk.green(`✅ Task fetched: ${taskInfo.title}\n`));
+      console.log(chalk.green(`✅ Task fetched: ${taskInfo.title}`));
+
+      // Get sprint name for test plan linking
+      const sprintName = await this.jiraService.getTaskSprintName(taskId);
+      if (sprintName) {
+        console.log(chalk.green(`✅ Sprint: ${sprintName}\n`));
+      } else {
+        console.log(chalk.yellow(`⚠️  No sprint found for task\n`));
+      }
 
       // Step 2: Resolve analytics type
       console.log(chalk.yellow('Step 2/8: Resolving analytics type...'));
@@ -184,30 +192,19 @@ export class Orchestrator {
 
       console.log(chalk.green(`✅ Created ${createdTestCaseIds.length} test cases in BrowserStack\n`));
 
-      // Step 8: Link test cases to test run
+      // Step 8: Find or create test run, then link test cases
       console.log(chalk.yellow('Step 8/8: Linking test cases to test run...'));
       try {
         const testRun = await withRetry(
-          () => this.browserStackService.findTestRunByTaskId(taskId),
+          () => this.browserStackService.findOrCreateTestRun(taskId, taskInfo.title, sprintName ?? undefined),
           { maxRetries: 3 }
         );
 
-        if (!testRun) {
-          console.log(chalk.red(`⚠️  Test run not found for task ${taskId}`));
-          ErrorLogger.log(
-            ErrorLogger.createLog(
-              new Error(`Test run not found for task ${taskId}`),
-              taskId,
-              'Find test run'
-            )
-          );
-        } else {
-          await withRetry(
-            () => this.browserStackService.updateTestRunCases(testRun.identifier, createdTestCaseIds),
-            { maxRetries: 3 }
-          );
-          console.log(chalk.green(`✅ Linked ${createdTestCaseIds.length} test cases to test run ${testRun.identifier}\n`));
-        }
+        await withRetry(
+          () => this.browserStackService.updateTestRunCases(testRun.identifier, createdTestCaseIds),
+          { maxRetries: 3 }
+        );
+        console.log(chalk.green(`✅ Linked ${createdTestCaseIds.length} test cases to test run ${testRun.identifier}\n`));
       } catch (error) {
         ErrorLogger.log(
           ErrorLogger.createLog(
@@ -347,6 +344,7 @@ export class Orchestrator {
       analyticsType: AnalyticsType;
       skip: boolean;
       ruleContent?: string;
+      sprintName?: string;
     }> = [];
 
     // Phase 1: Generate all prompts
@@ -362,6 +360,12 @@ export class Orchestrator {
           maxRetries: 3,
         });
         console.log(chalk.green(`  ✅ Fetched: ${taskInfo.title}`));
+
+        // Get sprint name for test plan linking
+        const sprintName = await this.jiraService.getTaskSprintName(taskId);
+        if (sprintName) {
+          console.log(chalk.green(`  ✅ Sprint: ${sprintName}`));
+        }
 
         // Step 2: Resolve analytics type
         let analyticsType = this.ruleResolver.resolve(taskInfo.title);
@@ -395,7 +399,8 @@ export class Orchestrator {
             taskInfo,
             analyticsType,
             skip: false,
-            ruleContent
+            ruleContent,
+            sprintName: sprintName ?? undefined,
           });
         }
       } catch (error) {
@@ -557,21 +562,21 @@ export class Orchestrator {
         }
         console.log(chalk.green(`  ✅ Created ${createdTestCaseIds.length} test cases`));
 
-        // Link to test run
+        // Find or create test run, then link test cases
         const testRun = await withRetry(
-          () => this.browserStackService.findTestRunByTaskId(taskData.taskId),
+          () => this.browserStackService.findOrCreateTestRun(
+            taskData.taskId,
+            taskData.taskInfo?.title,
+            taskData.sprintName
+          ),
           { maxRetries: 3 }
         );
 
-        if (testRun) {
-          await withRetry(
-            () => this.browserStackService.updateTestRunCases(testRun.identifier, createdTestCaseIds),
-            { maxRetries: 3 }
-          );
-          console.log(chalk.green(`  ✅ Linked to test run ${testRun.identifier}\n`));
-        } else {
-          console.log(chalk.yellow(`  ⚠️  Test run not found\n`));
-        }
+        await withRetry(
+          () => this.browserStackService.updateTestRunCases(testRun.identifier, createdTestCaseIds),
+          { maxRetries: 3 }
+        );
+        console.log(chalk.green(`  ✅ Linked to test run ${testRun.identifier}\n`));
 
         successCount++;
       } catch (error) {

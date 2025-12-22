@@ -1,5 +1,11 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { TaskInfo } from '../types/index.js';
+import { TaskInfo, JiraSprintState } from '../types/index.js';
+
+export interface JiraSprint {
+  id: number;
+  name: string;
+  state: JiraSprintState;
+}
 
 interface JiraIssue {
   key: string;
@@ -8,6 +14,7 @@ interface JiraIssue {
     description?: string;
     customfield_10037?: string; // Root Cause
     customfield_10038?: string; // Test Case Description
+    customfield_10000?: JiraSprint[]; // Sprint
     [key: string]: unknown;
   };
 }
@@ -64,6 +71,37 @@ export class JiraService {
       };
     } catch (error) {
       throw this.handleError(error, `Failed to get task ${taskId}`);
+    }
+  }
+
+  /**
+   * Get the active sprint name for a task
+   * @param taskId - Jira task ID
+   * @returns Sprint name or null if no active sprint
+   */
+  async getTaskSprintName(taskId: string): Promise<string | null> {
+    try {
+      const response = await this.client.get<JiraIssue>(
+        `/rest/api/3/issue/${taskId}?fields=customfield_10000`
+      );
+
+      const sprints = response.data.fields.customfield_10000;
+      if (!sprints || sprints.length === 0) {
+        return null;
+      }
+
+      // Prefer active sprint, otherwise use the most recent one
+      const activeSprint = sprints.find((s) => s.state === JiraSprintState.Active);
+      if (activeSprint) {
+        return activeSprint.name;
+      }
+
+      // Return the last sprint (most recent)
+      return sprints[sprints.length - 1].name;
+    } catch (error) {
+      // Don't fail the whole process if we can't get sprint info
+      console.warn(`Could not get sprint info for ${taskId}: ${(error as Error).message}`);
+      return null;
     }
   }
 

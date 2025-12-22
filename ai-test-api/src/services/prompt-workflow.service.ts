@@ -47,6 +47,11 @@ export interface ProcessResponseResult {
     failedCount: number;
     createdTestCaseIds: string[];
     failedTestCases: string[];
+    testRun?: {
+      identifier: string;
+      name: string;
+      testPlanId?: string;
+    };
   };
 }
 
@@ -259,6 +264,52 @@ export class PromptWorkflowService {
       }
     }
 
+    // 7. Get sprint name for test plan linking
+    const sprintName = await this.jiraService.getTaskSprintName(taskId);
+
+    // 8. Find or create test run and link test cases
+    let testRunInfo: { identifier: string; name: string; testPlanId?: string } | undefined;
+
+    if (createdTestCaseIds.length > 0) {
+      try {
+        const testRun = await withRetry(
+          () =>
+            this.browserStackService.findOrCreateTestRun(
+              taskId,
+              finalTaskTitle,
+              sprintName ?? undefined
+            ),
+          { maxRetries: 3 }
+        );
+
+        await withRetry(
+          () =>
+            this.browserStackService.updateTestRunCases(
+              testRun.identifier,
+              createdTestCaseIds
+            ),
+          { maxRetries: 3 }
+        );
+
+        testRunInfo = {
+          identifier: testRun.identifier,
+          name: testRun.name,
+        };
+
+        console.log(`✅ Linked ${createdTestCaseIds.length} test cases to test run ${testRun.identifier}`);
+      } catch (error) {
+        // Log error but don't fail the response
+        ErrorLogger.log(
+          ErrorLogger.createLog(
+            error as Error,
+            taskId,
+            'Link test cases to test run'
+          )
+        );
+        console.error(`⚠️ Failed to link test cases to test run: ${(error as Error).message}`);
+      }
+    }
+
     return {
       taskId,
       responseFile: responseFilePath,
@@ -271,6 +322,7 @@ export class PromptWorkflowService {
         failedCount: failedTestCases.length,
         createdTestCaseIds,
         failedTestCases,
+        testRun: testRunInfo,
       },
     };
   }

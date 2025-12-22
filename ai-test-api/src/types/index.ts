@@ -14,6 +14,12 @@ export enum Mode {
   Manual = 'manual',
 }
 
+export enum JiraSprintState {
+  Active = 'active',
+  Closed = 'closed',
+  Future = 'future',
+}
+
 export enum AnalyticsType {
   Overall = 'overall',
   Homepage = 'homepage',

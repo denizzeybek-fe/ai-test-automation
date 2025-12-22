@@ -242,6 +242,103 @@ export class BrowserStackService {
   }
 
   /**
+   * Find test plan by name
+   */
+  async findTestPlanByName(name: string): Promise<{ identifier: string; name: string } | null> {
+    try {
+      const response = await this.client.get<{
+        success: boolean;
+        test_plans: Array<{ identifier: string; name: string }>;
+      }>(`/projects/${this.projectId}/test-plans`);
+
+      const testPlans = response.data.test_plans || [];
+      const found = testPlans.find(
+        (plan) => plan.name.toLowerCase() === name.toLowerCase()
+      );
+
+      return found || null;
+    } catch (error) {
+      console.warn(`Could not search test plans: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Create a new test run
+   */
+  async createTestRun(
+    name: string,
+    description?: string,
+    testPlanId?: string
+  ): Promise<BrowserStackTestRun> {
+    try {
+      const payload: {
+        test_run: {
+          name: string;
+          description: string;
+          test_plan_id?: string;
+        };
+      } = {
+        test_run: {
+          name,
+          description: description || `Test run for ${name}`,
+        },
+      };
+
+      if (testPlanId) {
+        payload.test_run.test_plan_id = testPlanId;
+      }
+
+      const response = await this.client.post<{ success: boolean; test_run: BrowserStackTestRun }>(
+        `/projects/${this.projectId}/test-runs`,
+        payload
+      );
+
+      const testRun = response.data.test_run;
+      const planInfo = testPlanId ? ` (linked to ${testPlanId})` : '';
+      console.log(`✅ Created test run: ${testRun.identifier} - ${testRun.name}${planInfo}`);
+      return testRun;
+    } catch (error) {
+      throw this.handleError(error, `Failed to create test run '${name}'`);
+    }
+  }
+
+  /**
+   * Find test run by task ID or create if not exists
+   * @param taskId - Task ID (e.g., PA-12345)
+   * @param taskTitle - Task title for description
+   * @param sprintName - Sprint name to find matching test plan
+   */
+  async findOrCreateTestRun(
+    taskId: string,
+    taskTitle?: string,
+    sprintName?: string
+  ): Promise<BrowserStackTestRun> {
+    // First try to find existing test run
+    const existing = await this.findTestRunByTaskId(taskId);
+    if (existing) {
+      console.log(`📋 Using existing test run: ${existing.identifier}`);
+      return existing;
+    }
+
+    // Try to find test plan by sprint name
+    let testPlanId: string | undefined;
+    if (sprintName) {
+      const testPlan = await this.findTestPlanByName(sprintName);
+      if (testPlan) {
+        testPlanId = testPlan.identifier;
+        console.log(`📋 Found matching test plan: ${testPlan.identifier} (${testPlan.name})`);
+      } else {
+        console.log(`⚠️  No test plan found for sprint: ${sprintName}`);
+      }
+    }
+
+    // Create new test run (with test plan if found)
+    console.log(`📋 Creating new test run for ${taskId}...`);
+    return await this.createTestRun(taskId, taskTitle, testPlanId);
+  }
+
+  /**
    * Error handler with categorization
    */
   private handleError(error: unknown, message: string): Error {
