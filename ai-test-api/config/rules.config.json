@@ -2,7 +2,7 @@
   "keywordPatterns": {
     "overall": ["overall[\\s-]?analytics?", "overallanalytics", "overall"],
     "homepage": ["home[\\s-]?page", "homepage"],
-    "onsite": ["on[\\s-]?site[\\s-]?analytics?", "onsiteanalytics", "onsite"],
+    "onsite": ["on[\\s-]?site[\\s-]?analytics?", "onsiteanalytics", "onsite", "osa"],
     "usage": ["usage[\\s-]?analytics?", "usageanalytics", "usage"],
     "event-conversion": ["event[\\s-]?conversion", "eventconversion", "event conversion"],
     "enigma-sentinel": ["enigma[\\s-]?sentinel", "enigmasentinel", "enigma sentinel", "sentinel"],
