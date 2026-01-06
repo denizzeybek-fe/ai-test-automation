@@ -23,6 +23,20 @@ const io = new SocketIOServer(httpServer, {
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Request size logger (for debugging large payloads)
+app.use((req, _res, next) => {
+  if (req.body && Object.keys(req.body).length > 0) {
+    const size = JSON.stringify(req.body).length;
+    const sizeKB = (size / 1024).toFixed(2);
+    if (size > 50000) {
+      console.log(`⚠️  Large request: ${req.method} ${req.path} - ${sizeKB}KB`);
+    } else {
+      console.log(`📦 Request: ${req.method} ${req.path} - ${sizeKB}KB`);
+    }
+  }
+  next();
+});
+
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

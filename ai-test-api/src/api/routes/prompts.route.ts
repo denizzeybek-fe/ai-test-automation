@@ -364,6 +364,7 @@ router.post('/response', async (req, res) => {
       ...result,
     });
   } catch (error) {
+    console.error('❌ /api/prompts/response error:', (error as Error).message);
     return res.status(500).json({
       success: false,
       error: (error as Error).message,
